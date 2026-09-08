@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CartService } from '../../services/cart.service';
+import { CartDrawerService } from '../../services/cart-drawer.service';
 import { CheckoutApiError, CheckoutService } from '../../services/checkout.service';
 import { CheckoutResponseDTO } from '../../models/shared';
 import { DiscountAlertComponent } from '../discount-alert/discount-alert.component';
@@ -21,6 +22,7 @@ export class CartComponent {
 
   public constructor(
     public readonly cartService: CartService,
+    public readonly cartDrawerService: CartDrawerService,
     private readonly checkoutService: CheckoutService
   ) {}
 

@@ -244,5 +244,103 @@
     "discountCapReached": false,
     "finalTotal": 191.9,
     "createdAt": "2026-09-08T18:40:58.821Z"
+  },
+  {
+    "orderId": "d46b9a4f-6da2-4096-8eda-1e218994e85a",
+    "items": [
+      {
+        "productId": "p2",
+        "quantity": 1
+      },
+      {
+        "productId": "p4",
+        "quantity": 1
+      },
+      {
+        "productId": "p7",
+        "quantity": 1
+      },
+      {
+        "productId": "p6",
+        "quantity": 1
+      }
+    ],
+    "originalSubtotal": 158,
+    "discountBreakdown": [
+      {
+        "ruleName": "DESCUENTO_CATEGORIA",
+        "description": "10% por categoría Tecnologia (base $18.00).",
+        "amountApplied": 1.8,
+        "subtotalAfter": 156.2
+      },
+      {
+        "ruleName": "DESCUENTO_VOLUMEN",
+        "description": "5% adicional por superar $100 en subtotal.",
+        "amountApplied": 7.81,
+        "subtotalAfter": 148.39
+      },
+      {
+        "ruleName": "DESCUENTO_CUPON",
+        "description": "No se ingresó cupón; no aplica.",
+        "amountApplied": 0,
+        "subtotalAfter": 148.39
+      }
+    ],
+    "totalDiscountAmount": 9.61,
+    "effectiveDiscountPercentage": 6.08,
+    "discountCapReached": false,
+    "finalTotal": 148.39,
+    "createdAt": "2026-09-08T19:45:16.611Z"
+  },
+  {
+    "orderId": "20219a5c-7b37-494d-a790-4444f0f3c8f0",
+    "items": [
+      {
+        "productId": "p1",
+        "quantity": 1
+      },
+      {
+        "productId": "p2",
+        "quantity": 1
+      },
+      {
+        "productId": "p3",
+        "quantity": 1
+      },
+      {
+        "productId": "p7",
+        "quantity": 1
+      },
+      {
+        "productId": "p8",
+        "quantity": 1
+      }
+    ],
+    "originalSubtotal": 795,
+    "discountBreakdown": [
+      {
+        "ruleName": "DESCUENTO_CATEGORIA",
+        "description": "10% por categoría Tecnologia (base $713.00).",
+        "amountApplied": 71.3,
+        "subtotalAfter": 723.7
+      },
+      {
+        "ruleName": "DESCUENTO_VOLUMEN",
+        "description": "5% adicional por superar $100 en subtotal.",
+        "amountApplied": 36.19,
+        "subtotalAfter": 687.51
+      },
+      {
+        "ruleName": "DESCUENTO_CUPON",
+        "description": "No se ingresó cupón; no aplica.",
+        "amountApplied": 0,
+        "subtotalAfter": 687.51
+      }
+    ],
+    "totalDiscountAmount": 107.49,
+    "effectiveDiscountPercentage": 13.52,
+    "discountCapReached": false,
+    "finalTotal": 687.51,
+    "createdAt": "2026-09-08T19:50:08.210Z"
   }
 ]

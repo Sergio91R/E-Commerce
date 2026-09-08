@@ -39,11 +39,12 @@ export class ProductListComponent implements OnInit {
     return this.cartService.lines().find((line) => line.product.id === productId)?.quantity ?? 0;
   }
 
-  public addToCart(product: Product): void {
+public addToCart(product: Product): void {
     const added = this.cartService.addItem(product);
     if (!added) {
       this.stockWarningId.set(product.id);
       setTimeout(() => this.stockWarningId.set(null), 2000);
     }
-  }
+}
+
 }
