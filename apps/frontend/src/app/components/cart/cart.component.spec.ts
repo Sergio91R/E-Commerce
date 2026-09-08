@@ -181,4 +181,136 @@ describe('CartComponent', () => {
     fixture.componentInstance.closeDrawer();
     expect(fixture.componentInstance.cartDrawerService.isOpen()).toBe(false);
   }));
+
+  it('escribir en el input NO dispara ninguna llamada; solo applyCoupon() lo hace', fakeAsync(() => {
+    fixture.detectChanges();
+    cartService.addItem(laptop);
+    fixture.detectChanges();
+    tick(300);
+    httpMock.expectOne(previewUrl).flush(emptyPreview);
+
+    fixture.componentInstance.onCouponInput('WELCOME2026');
+    tick(300);
+    httpMock.expectNone(previewUrl); // escribir solo no debe llamar al backend
+  }));
+
+  it('applyCoupon() con un cupón válido lo agrega al desglose (DESCUENTO_CUPON)', fakeAsync(() => {
+    fixture.detectChanges();
+    cartService.addItem(laptop);
+    fixture.detectChanges();
+    tick(300);
+    httpMock.expectOne(previewUrl).flush(emptyPreview);
+
+    fixture.componentInstance.onCouponInput('WELCOME2026');
+    fixture.componentInstance.applyCoupon();
+    tick(300);
+
+    const req = httpMock.expectOne(previewUrl);
+    expect(req.request.body).toEqual({
+      items: [{ productId: 'p1', quantity: 1 }],
+      couponCode: 'WELCOME2026'
+    });
+
+    const withCoupon: CheckoutPreviewResponseDTO = {
+      ...emptyPreview,
+      discountBreakdown: [
+        { ruleName: 'DESCUENTO_CUPON', description: "15% adicional por cupón 'WELCOME2026'.", amountApplied: 97.5, subtotalAfter: 552.5 }
+      ],
+      totalDiscountAmount: 97.5,
+      finalTotal: 552.5
+    };
+    req.flush(withCoupon);
+
+    expect(fixture.componentInstance.preview()).toEqual(withCoupon);
+    expect(fixture.componentInstance.couponFieldError()).toBeNull();
+  }));
+
+  it('applyCoupon() con un cupón inválido muestra el mensaje bajo el input y reintenta sin cupón', fakeAsync(() => {
+    fixture.detectChanges();
+    cartService.addItem(laptop);
+    fixture.detectChanges();
+    tick(300);
+    httpMock.expectOne(previewUrl).flush(emptyPreview);
+
+    fixture.componentInstance.onCouponInput('NOEXISTE');
+    fixture.componentInstance.applyCoupon();
+    tick(300);
+
+    const req = httpMock.expectOne(previewUrl);
+    expect(req.request.body).toEqual({
+      items: [{ productId: 'p1', quantity: 1 }],
+      couponCode: 'NOEXISTE'
+    });
+    req.flush({ error: 'Cupón inválido', code: 'INVALID_COUPON' }, { status: 400, statusText: 'Bad Request' });
+
+    // Reintento automático sin cupón para no dejar al usuario sin el resto del desglose
+    const retryReq = httpMock.expectOne(previewUrl);
+    expect(retryReq.request.body).toEqual({ items: [{ productId: 'p1', quantity: 1 }] });
+    retryReq.flush(emptyPreview);
+
+    expect(fixture.componentInstance.couponFieldError()).toBe('El cupón no existe o está expirado.');
+    expect(fixture.componentInstance.preview()).toEqual(emptyPreview);
+  }));
+
+  it('editar el input del cupón (incluso borrarlo) limpia el mensaje de error en rojo', fakeAsync(() => {
+    fixture.detectChanges();
+    cartService.addItem(laptop);
+    fixture.detectChanges();
+    tick(300);
+    httpMock.expectOne(previewUrl).flush(emptyPreview);
+
+    fixture.componentInstance.onCouponInput('NOEXISTE');
+    fixture.componentInstance.applyCoupon();
+    tick(300);
+    httpMock.expectOne(previewUrl).flush({ error: 'Cupón inválido', code: 'INVALID_COUPON' }, { status: 400, statusText: 'Bad Request' });
+    httpMock.expectOne(previewUrl).flush(emptyPreview); // reintento sin cupón
+
+    expect(fixture.componentInstance.couponFieldError()).toBe('El cupón no existe o está expirado.');
+
+    // El usuario borra o edita lo que escribió: el mensaje debe desaparecer
+    fixture.componentInstance.onCouponInput('');
+    expect(fixture.componentInstance.couponFieldError()).toBeNull();
+  }));
+
+  it('editar el input del cupón también limpia el error de confirmación (ej. tras un intento fallido de compra)', () => {
+    fixture.detectChanges();
+    fixture.componentInstance.confirmError.set('El cupón no existe o está expirado.');
+
+    fixture.componentInstance.onCouponInput('X');
+
+    expect(fixture.componentInstance.confirmError()).toBeNull();
+  });
+
+  it('BUG REPRODUCIDO: si se aplica un cupón inválido y luego se borra el input, confirmar compra NO debe reenviar ese cupón', fakeAsync(() => {
+    fixture.detectChanges();
+    cartService.addItem(laptop);
+    fixture.detectChanges();
+    tick(300);
+    httpMock.expectOne(previewUrl).flush(emptyPreview);
+
+    // 1) Se aplica un cupón inválido
+    fixture.componentInstance.onCouponInput('dkjhdf');
+    fixture.componentInstance.applyCoupon();
+    tick(300);
+    httpMock.expectOne(previewUrl).flush({ error: "El cupón 'dkjhdf' no existe o está expirado.", code: 'INVALID_COUPON' }, { status: 400, statusText: 'Bad Request' });
+    httpMock.expectOne(previewUrl).flush(emptyPreview); // reintento sin cupón
+    expect(fixture.componentInstance.couponFieldError()).toContain('no existe o está expirado');
+
+    // 2) El usuario borra el input por completo
+    fixture.componentInstance.onCouponInput('');
+    tick(300);
+    // Al quedar sin cupón, se recalcula el preview de nuevo sin cupón
+    httpMock.expectOne(previewUrl).flush(emptyPreview);
+
+    // 3) Confirmar compra NO debe volver a mandar 'dkjhdf' al backend
+    fixture.componentInstance.confirmPurchase();
+    const req = httpMock.expectOne(checkoutUrl);
+    expect(req.request.body).toEqual({ items: [{ productId: 'p1', quantity: 1 }] });
+    req.flush({
+      orderId: 'ok-123', originalSubtotal: 650, discountBreakdown: [], totalDiscountAmount: 0,
+      effectiveDiscountPercentage: 0, discountCapReached: false, finalTotal: 650, createdAt: new Date().toISOString()
+    } as CheckoutResponseDTO);
+
+    expect(fixture.componentInstance.confirmedOrder()).not.toBeNull();
+  }));
 });

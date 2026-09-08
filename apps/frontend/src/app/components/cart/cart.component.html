@@ -75,14 +75,19 @@
         <button class="btn btn-secondary" (click)="clearCart()">Vaciar carrito</button>
       </div>
 
-      <div class="coupon-row" *ngIf="!cartService.isEmpty()">
-        <input
-          type="text"
-          placeholder="Código de cupón (ej. WELCOME2026)"
-          [ngModel]="couponCode()"
-          (ngModelChange)="onCouponInput($event)"
-          name="couponCode"
-        />
+      <div class="coupon-section" *ngIf="!cartService.isEmpty()">
+        <div class="coupon-row">
+          <input
+            type="text"
+            placeholder="Código de cupón (ej. WELCOME2026)"
+            [ngModel]="couponInput()"
+            (ngModelChange)="onCouponInput($event)"
+            (keyup.enter)="applyCoupon()"
+            name="couponCode"
+          />
+          <button class="btn btn-secondary" (click)="applyCoupon()">Aplicar cupón</button>
+        </div>
+        <p class="coupon-field-error" *ngIf="couponFieldError()">{{ couponFieldError() }}</p>
       </div>
 
       <!-- Desglose EN VIVO: se recalcula solo al agregar/quitar productos o cambiar el cupón -->

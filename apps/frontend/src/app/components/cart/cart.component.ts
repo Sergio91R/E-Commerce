@@ -5,16 +5,18 @@ import { CartService } from '../../services/cart.service';
 import { CartDrawerService } from '../../services/cart-drawer.service';
 import { OrderConfirmationService } from '../../services/order-confirmation.service';
 import { CheckoutApiError, CheckoutService } from '../../services/checkout.service';
-import { CheckoutPreviewResponseDTO, CheckoutResponseDTO } from '../../models/shared';
+import { CartItemDTO, CheckoutPreviewResponseDTO, CheckoutResponseDTO } from '../../models/shared';
 import { DiscountAlertComponent } from '../discount-alert/discount-alert.component';
 
-const PREVIEW_DEBOUNCE_MS = 300;
+const CART_CHANGE_DEBOUNCE_MS = 300;
 
 /**
  * El carrito tiene dos flujos separados a propósito:
  *  1) "Preview" (calculatePreview / preview()): se recalcula solo, sin
- *     efectos secundarios, cada vez que cambia el carrito o el cupón.
- *     Podés seguir agregando/quitando productos libremente.
+ *     efectos secundarios, cada vez que cambia el carrito. El cupón, en
+ *     cambio, se aplica de forma EXPLÍCITA con el botón "Aplicar cupón"
+ *     (no en cada tecla), para no spamear al backend y para poder mostrar
+ *     un mensaje claro si el código no existe o está expirado.
  *  2) "Confirmar compra" (checkout()): recién ahí se decrementa stock real
  *     y se persiste la orden. A partir de ese momento el carrito se vacía
  *     y, a través de OrderConfirmationService, se bloquea el catálogo
@@ -28,7 +30,12 @@ const PREVIEW_DEBOUNCE_MS = 300;
   styleUrl: './cart.component.scss'
 })
 export class CartComponent {
-  public readonly couponCode = signal('');
+  /** Texto que el usuario está escribiendo (no dispara ningún cálculo por sí solo). */
+  public readonly couponInput = signal('');
+  /** Último cupón confirmado con el botón "Aplicar cupón" (o vacío si no hay). */
+  public readonly appliedCouponCode = signal('');
+  /** Mensaje específico de "cupón inválido/expirado", mostrado debajo del input. */
+  public readonly couponFieldError = signal<string | null>(null);
 
   public readonly preview = signal<CheckoutPreviewResponseDTO | null>(null);
   public readonly previewError = signal<string | null>(null);
@@ -50,12 +57,12 @@ export class CartComponent {
   ) {
     this.confirmedOrder = this.orderConfirmationService.confirmedOrder;
 
-    // Se re-ejecuta automáticamente cada vez que cambian las líneas del
-    // carrito o el cupón, disparando un recálculo en vivo (HU2).
+    // Se re-ejecuta cada vez que cambian las líneas del carrito o el cupón
+    // YA APLICADO (no en cada tecla del input) — HU2.
     effect(
       () => {
         this.cartService.lines();
-        this.couponCode();
+        this.appliedCouponCode();
         this.schedulePreview();
       },
       { allowSignalWrites: true }
@@ -63,7 +70,28 @@ export class CartComponent {
   }
 
   public onCouponInput(value: string): void {
-    this.couponCode.set(value);
+    this.couponInput.set(value);
+    // Cualquier edición del input (incluido borrarlo) limpia los mensajes
+    // de error relacionados al cupón, para no dejar un error "pegado" que
+    // ya no corresponde a lo que el usuario está escribiendo ahora.
+    this.couponFieldError.set(null);
+    this.confirmError.set(null);
+
+    if (value.trim().length === 0) {
+      // Un input vacío significa, sin ambigüedad, "no quiero cupón": se
+      // saca de inmediato el cupón aplicado (sin esperar al botón
+      // "Aplicar cupón"). Si no se hiciera esto, un cupón inválido que ya
+      // se había "aplicado" quedaría vigente por detrás de escena y
+      // "Confirmar compra" seguiría enviándolo al backend aunque el campo
+      // se vea vacío en pantalla.
+      this.appliedCouponCode.set('');
+    }
+  }
+
+  /** Aplica el cupón escrito en el input (botón "Aplicar cupón" o tecla Enter). */
+  public applyCoupon(): void {
+    this.couponFieldError.set(null);
+    this.appliedCouponCode.set(this.couponInput().trim());
   }
 
   /**
@@ -96,7 +124,9 @@ export class CartComponent {
 
   public clearCart(): void {
     this.cartService.clear();
-    this.couponCode.set('');
+    this.couponInput.set('');
+    this.appliedCouponCode.set('');
+    this.couponFieldError.set(null);
   }
 
   public startNewPurchase(): void {
@@ -114,12 +144,14 @@ export class CartComponent {
 
     const items = this.cartService.toCartItemDTOs();
 
-    this.checkoutService.checkout(items, this.couponCode()).subscribe({
+    this.checkoutService.checkout(items, this.appliedCouponCode()).subscribe({
       next: (order) => {
         this.orderConfirmationService.setConfirmedOrder(order);
         this.confirming.set(false);
         this.cartService.clear();
-        this.couponCode.set('');
+        this.couponInput.set('');
+        this.appliedCouponCode.set('');
+        this.couponFieldError.set(null);
         this.preview.set(null);
       },
       error: (err: CheckoutApiError) => {
@@ -142,21 +174,46 @@ export class CartComponent {
     }
 
     this.previewLoading.set(true);
-    this.previewDebounceHandle = setTimeout(() => this.runPreview(), PREVIEW_DEBOUNCE_MS);
+    this.previewDebounceHandle = setTimeout(() => this.runPreview(), CART_CHANGE_DEBOUNCE_MS);
   }
 
   private runPreview(): void {
     const items = this.cartService.toCartItemDTOs();
+    const coupon = this.appliedCouponCode();
 
-    this.checkoutService.preview(items, this.couponCode()).subscribe({
+    this.checkoutService.preview(items, coupon).subscribe({
       next: (result) => {
         this.preview.set(result);
         this.previewError.set(null);
+        this.couponFieldError.set(null);
         this.previewLoading.set(false);
       },
       error: (err: CheckoutApiError) => {
+        if (err.apiError.code === 'INVALID_COUPON') {
+          // El cupón no existe/expiró: se lo avisamos bajo el input, pero
+          // igual mostramos el desglose SIN cupón para no dejar al usuario
+          // sin información de categoría/volumen mientras lo corrige.
+          this.couponFieldError.set('El cupón no existe o está expirado.');
+          this.previewError.set(null);
+          this.retryPreviewWithoutCoupon(items);
+          return;
+        }
+
         this.preview.set(null);
         this.previewError.set(err.apiError.error);
+        this.previewLoading.set(false);
+      }
+    });
+  }
+
+  private retryPreviewWithoutCoupon(items: CartItemDTO[]): void {
+    this.checkoutService.preview(items, undefined).subscribe({
+      next: (result) => {
+        this.preview.set(result);
+        this.previewLoading.set(false);
+      },
+      error: () => {
+        this.preview.set(null);
         this.previewLoading.set(false);
       }
     });

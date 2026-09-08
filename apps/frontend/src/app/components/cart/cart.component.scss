@@ -145,16 +145,34 @@
   font-size: 1rem;
 }
 
-.coupon-row {
+.coupon-section {
   margin: 12px 0;
 }
 
+.coupon-row {
+  display: flex;
+  gap: 8px;
+}
+
 .coupon-row input {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   box-sizing: border-box;
   padding: 9px 10px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
+}
+
+.coupon-row .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.coupon-field-error {
+  color: #dc2626;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin: 6px 0 0;
 }
 
 /* ---- Desglose de descuentos (lista, no tabla) ---- */
