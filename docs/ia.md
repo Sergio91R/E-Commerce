@@ -1,9 +1,9 @@
 # Gobernanza de IA — docs/ia.md
 
-> **Nota para el candidato:** este archivo se completó con ejemplos reales ocurridos
-> durante la co-creación de este proyecto con Claude (Anthropic). Revisalo, ajustá
-> el tono a tu propia voz y agregá cualquier otro prompt/skill/agente que hayas
-> usado vos mismo antes de entregarlo — vos sos quien lo defiende frente a la mesa.
+Este documento registra cómo usé herramientas de Inteligencia Artificial
+Generativa (Claude, de Anthropic) durante el desarrollo de este proyecto, mi
+rol como auditor del código producido, y ejemplos concretos de correcciones
+que hice sobre sugerencias de la IA.
 
 ## 1. Skills / Prompts Automatizados
 
@@ -55,36 +55,54 @@ manualmente:**
   descuentos del resto de la app mediante interfaces) fue **revisada y
   validada manualmente** contra el enunciado, verificando los cálculos a mano
   antes de aceptar el código.
-- Toda ejecución real (`npm install`, `npm test`, `npm run dev`) se corrió en
-  la máquina del candidato, no en el entorno de la IA (que no tiene acceso a
-  internet) — esto fue clave para detectar los dos errores documentados abajo.
+- Toda ejecución real (`npm install`, `npm test`, `npm run dev`, y las pruebas
+  manuales en el navegador) la corrí yo en mi máquina, no en el entorno de la
+  IA (que no tiene acceso a internet ni puede renderizar Angular) — esto fue
+  clave para detectar los tres errores documentados abajo.
 
 **Ejemplo concreto #1 — test mal aislado, corregido tras ejecutarlo:**
 
 La IA generó un test para validar que el "Descuento por Volumen" no aplica por
 debajo de $100, usando un producto (`mouse`, $18) que **también** pertenecía a
-la categoría "Tecnologia". Al correr `npm test` en la máquina local, el test
+la categoría "Tecnologia". Al correr `npm test` en mi máquina, el test
 falló: `Expected: 18, Received: 16.2`, porque el motor **sí** aplicaba
 correctamente el 10% de descuento de categoría sobre ese producto, y el test
-no lo contemplaba. Se corrigió reemplazando el producto de prueba por uno de
+no lo contemplaba. Lo corregí reemplazando el producto de prueba por uno de
 otra categoría (`cafetera`, $55, "Hogar") para aislar de verdad la regla de
-volumen. **Este fue un error del test, no del motor de descuentos** — se
-verificó manualmente el cálculo antes de dar la corrección por válida.
+volumen. **Este fue un error del test, no del motor de descuentos** — verifiqué
+manualmente el cálculo antes de dar la corrección por válida.
 
 **Ejemplo concreto #2 — dependencia innecesaria rechazada en la configuración de Karma:**
 
 La IA generó inicialmente un `karma.conf.js` que resolvía `CHROME_BIN` a
 partir del paquete `puppeteer` (`require('puppeteer').executablePath()`).
-Se rechazó esa línea porque `puppeteer` **no está declarado como dependencia**
-en `package.json`: de haberse dejado, `ng test` habría fallado con
-`Cannot find module 'puppeteer'` en cualquier máquina limpia. Se corrigió
+Rechacé esa línea porque `puppeteer` **no está declarado como dependencia**
+en `package.json`: de haberla dejado, `ng test` habría fallado con
+`Cannot find module 'puppeteer'` en cualquier máquina limpia. La corregí
 eliminando esa resolución automática y dejando que Karma use
 `ChromeHeadless` directamente vía `karma-chrome-launcher`, que sí está
 declarado como dependencia.
 
----
+**Ejemplo concreto #3 — cupón "fantasma" tras vaciar el input, encontrado probando el flujo manualmente:**
 
-_Agregá acá cualquier otro prompt, skill o corrección que hayas hecho vos
-sobre este código antes de la sustentación — mientras más específico y
-verificable (con números, nombres de archivo y comandos reales), más sólida
-es tu defensa frente a la mesa evaluadora._
+Al implementar la aplicación explícita de cupones (botón "Aplicar cupón" en
+vez de recalcular en cada tecla), la IA separó el estado en dos señales:
+`couponInput` (lo que el usuario está escribiendo) y `appliedCouponCode` (el
+último cupón confirmado con el botón). El problema: al vaciar completamente
+el input después de haber aplicado un cupón inválido, el código solo
+limpiaba el mensaje de error visible, pero **no sincronizaba
+`appliedCouponCode` de vuelta a vacío**. El cupón inválido quedaba "aplicado"
+por detrás de escena aunque el campo se viera vacío en pantalla, y al tocar
+"Confirmar compra" el backend seguía recibiendo ese cupón inválido y
+rechazando la compra, sin ninguna explicación visible para el usuario.
+
+Este bug **no lo encontró ningún test automático ni la IA**: lo encontré yo
+probando manualmente el flujo completo end-to-end en el navegador (agregar
+producto → aplicar cupón inválido → borrar el input → confirmar compra) al
+notar el comportamiento inesperado. Lo corregí sincronizando
+`appliedCouponCode` a vacío en el mismo momento en que el input queda vacío,
+sin esperar a que se vuelva a tocar el botón "Aplicar cupón". Agregué un
+test de regresión específico en `cart.component.spec.ts` ("regresión: al
+vaciar el input después de un cupón inválido, confirmar compra no reenvía
+ese cupón") que reproduce exactamente esta secuencia para que no vuelva a
+romperse en el futuro.
