@@ -39,7 +39,7 @@ describe('DiscountEngine - cascada de reglas reales', () => {
     expect(categoryStep?.amountApplied).toBe(65); // 10% de 650, no de 705
   });
 
-it('aplica el descuento por volumen solo si el subtotal post-categoría supera $100', () => {
+  it('aplica el descuento por volumen solo si el subtotal post-categoría supera $100', () => {
     const engine = buildEngine();
     // Se usa un producto NO tecnológico a propósito, para aislar la regla de
     // volumen sin que la regla de categoría interfiera en el resultado.
@@ -50,7 +50,7 @@ it('aplica el descuento por volumen solo si el subtotal post-categoría supera $
     expect(categoryStep?.amountApplied).toBe(0);
     expect(volumeStep?.amountApplied).toBe(0);
     expect(result.finalTotal).toBe(55);
-});
+  });
 
   it('encadena categoría + volumen + cupón de forma multiplicativa, no sumada', () => {
     const engine = buildEngine();

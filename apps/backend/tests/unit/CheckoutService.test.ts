@@ -86,3 +86,34 @@ describe('CheckoutService - validaciones y edge cases', () => {
     expect(response.discountBreakdown.length).toBeGreaterThan(0);
   });
 });
+
+describe('CheckoutService - calculatePreview (sin efectos secundarios)', () => {
+  it('calcula el mismo desglose que checkout() pero sin decrementar stock', () => {
+    const { service, productRepository } = buildService();
+    const preview = service.calculatePreview([{ productId: 'p1', quantity: 1 }], 'WELCOME2026');
+
+    expect(preview.finalTotal).toBeGreaterThan(0);
+    expect(preview.discountBreakdown.length).toBeGreaterThan(0);
+    expect(productRepository.findById('p1')?.stock).toBe(2); // stock intacto
+  });
+
+  it('no persiste ninguna orden', () => {
+    const { service, orderRepository } = buildService();
+    service.calculatePreview([{ productId: 'p1', quantity: 1 }], undefined);
+    expect(orderRepository.saved).toHaveLength(0);
+  });
+
+  it('sigue validando carrito vacío, stock y cupón igual que checkout()', () => {
+    const { service } = buildService();
+    expect(() => service.calculatePreview([], undefined)).toThrow(EmptyCartError);
+    expect(() => service.calculatePreview([{ productId: 'p1', quantity: 99 }], undefined)).toThrow(
+      InsufficientStockError
+    );
+  });
+
+  it('se puede llamar repetidas veces (idempotente) sin efectos acumulativos', () => {
+    const { service, productRepository } = buildService();
+    service.calculatePreview([{ productId: 'p1', quantity: 2 }], undefined);
+    service.calculatePreview([{ productId: 'p1', quantity: 2 }], undefined);
+    expect(productRepository.findById('p1')?.stock).toBe(2);
+  });

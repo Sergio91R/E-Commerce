@@ -87,7 +87,7 @@ npm test         # ng test --code-coverage --watch=false --browsers=ChromeHeadle
 
 El reporte de cobertura HTML queda en `apps/frontend/coverage/frontend/index.html`.
 
-## 3. Catálogo de productos (semilla)
+## 3. Catalogo de productos (semilla)
 
 El backend arranca con 10 productos en memoria (`apps/backend/src/data/seedProducts.ts`),
 incluyendo varios de categoría "Tecnologia" (`p1` Laptop $650, `p2` Mouse $18,
