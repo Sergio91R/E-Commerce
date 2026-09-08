@@ -1,91 +1,121 @@
-<div class="cart-backdrop" *ngIf="cartDrawerService.isOpen()" (click)="cartDrawerService.close()"></div>
+<div class="cart-backdrop" *ngIf="cartDrawerService.isOpen()" (click)="closeDrawer()"></div>
 
 <aside class="cart-drawer" [class.open]="cartDrawerService.isOpen()" role="dialog" aria-label="Carrito de compras">
   <div class="cart-drawer-header">
     <h2>Tu carrito</h2>
-    <button class="btn-close" aria-label="Cerrar carrito" (click)="cartDrawerService.close()">✕</button>
+    <button
+      class="btn-close"
+      aria-label="Cerrar carrito"
+      [disabled]="!!confirmedOrder()"
+      (click)="closeDrawer()"
+    >
+      ✕
+    </button>
   </div>
 
   <div class="cart">
-    <p *ngIf="cartService.isEmpty()">El carrito está vacío. Agregá productos del catálogo.</p>
+    <!-- Confirmación de una compra ya cerrada: se muestra sola, sin el carrito editable -->
+    <div class="confirmed-order" *ngIf="confirmedOrder() as order">
+      <h3>✅ Orden confirmada #{{ order.orderId.slice(0, 8) }}</h3>
 
-    <table *ngIf="!cartService.isEmpty()" class="cart-table">
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th>Precio</th>
-          <th>Cantidad</th>
-          <th>Subtotal línea</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let line of cartService.lines()">
-          <td>{{ line.product.name }}</td>
-          <td>${{ line.product.price.toFixed(2) }}</td>
-          <td class="qty-controls">
-            <button class="btn btn-secondary" (click)="decrement(line.product.id)">-</button>
-            <span>{{ line.quantity }}</span>
-            <button
-              class="btn btn-secondary"
-              [disabled]="line.quantity >= line.product.stock"
-              (click)="increment(line.product.id)"
-            >
-              +
-            </button>
-          </td>
-          <td>${{ (line.product.price * line.quantity).toFixed(2) }}</td>
-          <td><button class="btn btn-danger" (click)="remove(line.product.id)">Quitar</button></td>
-        </tr>
-      </tbody>
-    </table>
+      <app-discount-alert [capReached]="order.discountCapReached"></app-discount-alert>
 
-    <div class="subtotal" *ngIf="!cartService.isEmpty()">
-      Subtotal original: <strong>${{ cartService.subtotal().toFixed(2) }}</strong>
-    </div>
-
-    <div class="coupon-row" *ngIf="!cartService.isEmpty()">
-      <input
-        type="text"
-        placeholder="Código de cupón (ej. WELCOME2026)"
-        [(ngModel)]="couponCode"
-        name="couponCode"
-      />
-      <button class="btn btn-primary" [disabled]="submitting()" (click)="submitCheckout()">
-        {{ submitting() ? 'Procesando...' : 'Aplicar y pagar' }}
-      </button>
-    </div>
-
-    <p class="checkout-error" *ngIf="checkoutErrorMessage()">{{ checkoutErrorMessage() }}</p>
-
-    <div class="checkout-result" *ngIf="checkoutResult() as result">
-      <h3>Orden confirmada #{{ result.orderId.slice(0, 8) }}</h3>
-
-      <app-discount-alert [capReached]="result.discountCapReached"></app-discount-alert>
-
-      <table class="breakdown-table">
-        <thead>
-          <tr>
-            <th>Regla</th>
-            <th>Descripción</th>
-            <th>Descuento aplicado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let entry of result.discountBreakdown">
-            <td>{{ entry.ruleName }}</td>
-            <td>{{ entry.description }}</td>
-            <td>-${{ entry.amountApplied.toFixed(2) }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="breakdown-list">
+        <div class="breakdown-item" *ngFor="let entry of order.discountBreakdown">
+          <div class="breakdown-item-header">
+            <span class="rule-name">{{ entry.ruleName }}</span>
+            <span class="rule-amount">-${{ entry.amountApplied.toFixed(2) }}</span>
+          </div>
+          <p class="rule-description">{{ entry.description }}</p>
+        </div>
+      </div>
 
       <ul class="totals">
-        <li>Subtotal original: <strong>${{ result.originalSubtotal.toFixed(2) }}</strong></li>
-        <li>Ahorro total: <strong>${{ result.totalDiscountAmount.toFixed(2) }}</strong></li>
-        <li>Porcentaje de descuento efectivo: <strong>{{ result.effectiveDiscountPercentage.toFixed(2) }}%</strong></li>
-        <li class="final">Total a pagar: <strong>${{ result.finalTotal.toFixed(2) }}</strong></li>
+        <li>Subtotal original: <strong>${{ order.originalSubtotal.toFixed(2) }}</strong></li>
+        <li>Ahorro total: <strong>${{ order.totalDiscountAmount.toFixed(2) }}</strong></li>
+        <li>Porcentaje de descuento efectivo: <strong>{{ order.effectiveDiscountPercentage.toFixed(2) }}%</strong></li>
+        <li class="final">Total pagado: <strong>${{ order.finalTotal.toFixed(2) }}</strong></li>
       </ul>
+
+      <button class="btn btn-primary" (click)="startNewPurchase()">Hacer una nueva compra</button>
     </div>
+
+    <!-- Carrito editable: visible mientras no haya una orden recién confirmada -->
+    <ng-container *ngIf="!confirmedOrder()">
+      <p *ngIf="cartService.isEmpty()">El carrito está vacío. Agregá productos del catálogo.</p>
+
+      <div class="cart-lines" *ngIf="!cartService.isEmpty()">
+        <div class="cart-line" *ngFor="let line of cartService.lines()">
+          <div class="cart-line-top">
+            <span class="line-name">{{ line.product.name }}</span>
+            <button class="btn-remove" aria-label="Quitar producto" (click)="remove(line.product.id)">Quitar ✕</button>
+          </div>
+          <div class="cart-line-bottom">
+            <span class="line-price">${{ line.product.price.toFixed(2) }} c/u</span>
+            <div class="qty-controls">
+              <button class="btn btn-secondary" (click)="decrement(line.product.id)">-</button>
+              <span class="qty-value">{{ line.quantity }}</span>
+              <button
+                class="btn btn-secondary"
+                [disabled]="line.quantity >= line.product.stock"
+                (click)="increment(line.product.id)"
+              >
+                +
+              </button>
+            </div>
+            <span class="line-subtotal">${{ (line.product.price * line.quantity).toFixed(2) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="cart-actions" *ngIf="!cartService.isEmpty()">
+        <div class="subtotal">
+          Subtotal original: <strong>${{ cartService.subtotal().toFixed(2) }}</strong>
+        </div>
+        <button class="btn btn-secondary" (click)="clearCart()">Vaciar carrito</button>
+      </div>
+
+      <div class="coupon-row" *ngIf="!cartService.isEmpty()">
+        <input
+          type="text"
+          placeholder="Código de cupón (ej. WELCOME2026)"
+          [ngModel]="couponCode()"
+          (ngModelChange)="onCouponInput($event)"
+          name="couponCode"
+        />
+      </div>
+
+      <!-- Desglose EN VIVO: se recalcula solo al agregar/quitar productos o cambiar el cupón -->
+      <div class="live-preview" *ngIf="!cartService.isEmpty()">
+        <p class="preview-loading" *ngIf="previewLoading()">Recalculando descuentos...</p>
+        <p class="preview-error" *ngIf="previewError() as msg">{{ msg }}</p>
+
+        <ng-container *ngIf="preview() as result">
+          <app-discount-alert [capReached]="result.discountCapReached"></app-discount-alert>
+
+          <div class="breakdown-list">
+            <div class="breakdown-item" *ngFor="let entry of result.discountBreakdown">
+              <div class="breakdown-item-header">
+                <span class="rule-name">{{ entry.ruleName }}</span>
+                <span class="rule-amount">-${{ entry.amountApplied.toFixed(2) }}</span>
+              </div>
+              <p class="rule-description">{{ entry.description }}</p>
+            </div>
+          </div>
+
+          <ul class="totals">
+            <li>Ahorro total: <strong>${{ result.totalDiscountAmount.toFixed(2) }}</strong></li>
+            <li>Porcentaje de descuento efectivo: <strong>{{ result.effectiveDiscountPercentage.toFixed(2) }}%</strong></li>
+            <li class="final">Total a pagar: <strong>${{ result.finalTotal.toFixed(2) }}</strong></li>
+          </ul>
+        </ng-container>
+
+        <p class="checkout-error" *ngIf="confirmError()">{{ confirmError() }}</p>
+
+        <button class="btn btn-primary btn-confirm" [disabled]="confirming()" (click)="confirmPurchase()">
+          {{ confirming() ? 'Confirmando...' : 'Confirmar compra' }}
+        </button>
+      </div>
+    </ng-container>
   </div>
 </aside>
