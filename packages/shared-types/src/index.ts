@@ -31,14 +31,27 @@ export interface DiscountBreakdownEntry {
   subtotalAfter: number;
 }
 
-export interface CheckoutResponseDTO {
-  orderId: string;
+/**
+ * Resultado del cálculo de descuentos SIN efectos secundarios: no valida
+ * stock en firme para decrementarlo ni persiste ninguna orden. Se usa para
+ * el "preview" en vivo mientras el usuario arma el carrito.
+ */
+export interface CheckoutPreviewResponseDTO {
   originalSubtotal: number;
   discountBreakdown: DiscountBreakdownEntry[];
   totalDiscountAmount: number;
   effectiveDiscountPercentage: number;
   discountCapReached: boolean;
   finalTotal: number;
+}
+
+/**
+ * Resultado de una compra CONFIRMADA: además del cálculo, incluye el id de
+ * la orden persistida y la fecha de creación. El backend decrementa stock
+ * real solo en este flujo, nunca en el preview.
+ */
+export interface CheckoutResponseDTO extends CheckoutPreviewResponseDTO {
+  orderId: string;
   createdAt: string;
 }
 

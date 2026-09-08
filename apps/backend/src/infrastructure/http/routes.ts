@@ -11,6 +11,21 @@ export function buildRouter(productRepository: ProductRepository, checkoutServic
     res.status(200).json(productRepository.findAll());
   });
 
+  // Preview: calcula el desglose de descuentos sin decrementar stock ni
+  // persistir ninguna orden. Pensado para recalcular en vivo mientras el
+  // usuario edita el carrito (agrega, quita o cambia el cupón).
+  router.post('/cart/calculate', (req: Request, res: Response) => {
+    const body = req.body as Partial<CheckoutRequestDTO>;
+
+    try {
+      const result = checkoutService.calculatePreview(body.items ?? [], body.couponCode);
+      res.status(200).json(result);
+    } catch (error) {
+      handleDomainError(error, res);
+    }
+  });
+
+  // Confirmación real de la compra: decrementa stock y persiste la orden.
   router.post('/checkout', (req: Request, res: Response) => {
     const body = req.body as Partial<CheckoutRequestDTO>;
 
@@ -18,16 +33,20 @@ export function buildRouter(productRepository: ProductRepository, checkoutServic
       const result = checkoutService.checkout(body.items ?? [], body.couponCode);
       res.status(201).json(result);
     } catch (error) {
-      if (error instanceof DomainError) {
-        const payload: ApiErrorResponse = { error: error.message, code: error.code };
-        res.status(mapCodeToHttpStatus(error.code)).json(payload);
-        return;
-      }
-      res.status(500).json({ error: 'Error interno del servidor.', code: 'INVALID_CART_DATA' });
+      handleDomainError(error, res);
     }
   });
 
   return router;
+}
+
+function handleDomainError(error: unknown, res: Response): void {
+  if (error instanceof DomainError) {
+    const payload: ApiErrorResponse = { error: error.message, code: error.code };
+    res.status(mapCodeToHttpStatus(error.code)).json(payload);
+    return;
+  }
+  res.status(500).json({ error: 'Error interno del servidor.', code: 'INVALID_CART_DATA' });
 }
 
 function mapCodeToHttpStatus(code: string): number {

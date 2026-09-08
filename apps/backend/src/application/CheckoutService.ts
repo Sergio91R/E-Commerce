@@ -1,9 +1,9 @@
 import { randomUUID } from 'crypto';
-import { CartItemDTO, CheckoutResponseDTO } from '@shared/index';
+import { CartItemDTO, CheckoutPreviewResponseDTO, CheckoutResponseDTO } from '@shared/index';
 import { ProductRepository } from '../domain/ProductRepository';
 import { OrderRepository } from '../domain/Order';
 import { DiscountEngine } from '../domain/discounts/DiscountEngine';
-import { CartLineSnapshot, roundCurrency } from '../domain/discounts/types';
+import { CartLineSnapshot, DiscountCalculationResult, roundCurrency } from '../domain/discounts/types';
 import { EmptyCartError, InvalidCartDataError, InsufficientStockError, ProductNotFoundError } from '../domain/errors';
 
 export class CheckoutService {
@@ -13,11 +13,27 @@ export class CheckoutService {
     private readonly discountEngine: DiscountEngine
   ) {}
 
+  /**
+   * Calcula el desglose de descuentos SIN efectos secundarios: no
+   * decrementa stock ni persiste ninguna orden. Se usa para el preview en
+   * vivo del carrito (HU2), de manera que el usuario pueda seguir agregando
+   * o quitando productos y ver el total recalculado antes de confirmar.
+   */
+  public calculatePreview(items: CartItemDTO[], couponCode: string | undefined): CheckoutPreviewResponseDTO {
+    this.validateCartShape(items);
+    const lines = this.resolveLinesAndValidateStock(items);
+    const calculation = this.discountEngine.calculate(lines, couponCode);
+    return this.toPreviewDTO(calculation);
+  }
+
+  /**
+   * Confirma la compra (HU3): vuelve a validar todo desde cero (nunca confía
+   * en un preview previo del cliente), decrementa el stock real y persiste
+   * la orden. A partir de acá el carrito del cliente se considera cerrado.
+   */
   public checkout(items: CartItemDTO[], couponCode: string | undefined): CheckoutResponseDTO {
     this.validateCartShape(items);
-
     const lines = this.resolveLinesAndValidateStock(items);
-
     const calculation = this.discountEngine.calculate(lines, couponCode);
 
     for (const item of items) {
@@ -26,29 +42,27 @@ export class CheckoutService {
 
     const orderId = randomUUID();
     const createdAt = new Date().toISOString();
+    const preview = this.toPreviewDTO(calculation);
 
     this.orderRepository.save({
       orderId,
       items,
       couponCode,
-      originalSubtotal: calculation.originalSubtotal,
-      discountBreakdown: calculation.breakdown,
-      totalDiscountAmount: calculation.totalDiscountAmount,
-      effectiveDiscountPercentage: calculation.effectiveDiscountPercentage,
-      discountCapReached: calculation.discountCapReached,
-      finalTotal: calculation.finalTotal,
-      createdAt
+      createdAt,
+      ...preview
     });
 
+    return { orderId, createdAt, ...preview };
+  }
+
+  private toPreviewDTO(calculation: DiscountCalculationResult): CheckoutPreviewResponseDTO {
     return {
-      orderId,
       originalSubtotal: calculation.originalSubtotal,
       discountBreakdown: calculation.breakdown,
       totalDiscountAmount: calculation.totalDiscountAmount,
       effectiveDiscountPercentage: calculation.effectiveDiscountPercentage,
       discountCapReached: calculation.discountCapReached,
-      finalTotal: calculation.finalTotal,
-      createdAt
+      finalTotal: calculation.finalTotal
     };
   }
 
