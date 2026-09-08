@@ -1,0 +1,84 @@
+<div class="cart">
+  <h2>Tu carrito</h2>
+
+  <p *ngIf="cartService.isEmpty()">El carrito está vacío. Agregá productos del catálogo.</p>
+
+  <table *ngIf="!cartService.isEmpty()" class="cart-table">
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th>Precio</th>
+        <th>Cantidad</th>
+        <th>Subtotal línea</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let line of cartService.lines()">
+        <td>{{ line.product.name }}</td>
+        <td>${{ line.product.price.toFixed(2) }}</td>
+        <td class="qty-controls">
+          <button class="btn btn-secondary" (click)="decrement(line.product.id)">-</button>
+          <span>{{ line.quantity }}</span>
+          <button
+            class="btn btn-secondary"
+            [disabled]="line.quantity >= line.product.stock"
+            (click)="increment(line.product.id)"
+          >
+            +
+          </button>
+        </td>
+        <td>${{ (line.product.price * line.quantity).toFixed(2) }}</td>
+        <td><button class="btn btn-danger" (click)="remove(line.product.id)">Quitar</button></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="subtotal" *ngIf="!cartService.isEmpty()">
+    Subtotal original: <strong>${{ cartService.subtotal().toFixed(2) }}</strong>
+  </div>
+
+  <div class="coupon-row" *ngIf="!cartService.isEmpty()">
+    <input
+      type="text"
+      placeholder="Código de cupón (ej. WELCOME2026)"
+      [(ngModel)]="couponCode"
+      name="couponCode"
+    />
+    <button class="btn btn-primary" [disabled]="submitting()" (click)="submitCheckout()">
+      {{ submitting() ? 'Procesando...' : 'Aplicar y pagar' }}
+    </button>
+  </div>
+
+  <p class="checkout-error" *ngIf="checkoutErrorMessage()">{{ checkoutErrorMessage() }}</p>
+
+  <div class="checkout-result" *ngIf="checkoutResult() as result">
+    <h3>Orden confirmada #{{ result.orderId.slice(0, 8) }}</h3>
+
+    <app-discount-alert [capReached]="result.discountCapReached"></app-discount-alert>
+
+    <table class="breakdown-table">
+      <thead>
+        <tr>
+          <th>Regla</th>
+          <th>Descripción</th>
+          <th>Descuento aplicado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let entry of result.discountBreakdown">
+          <td>{{ entry.ruleName }}</td>
+          <td>{{ entry.description }}</td>
+          <td>-${{ entry.amountApplied.toFixed(2) }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ul class="totals">
+      <li>Subtotal original: <strong>${{ result.originalSubtotal.toFixed(2) }}</strong></li>
+      <li>Ahorro total: <strong>${{ result.totalDiscountAmount.toFixed(2) }}</strong></li>
+      <li>Porcentaje de descuento efectivo: <strong>{{ result.effectiveDiscountPercentage.toFixed(2) }}%</strong></li>
+      <li class="final">Total a pagar: <strong>${{ result.finalTotal.toFixed(2) }}</strong></li>
+    </ul>
+  </div>
+</div>

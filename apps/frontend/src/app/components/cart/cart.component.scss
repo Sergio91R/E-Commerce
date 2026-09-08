@@ -1,0 +1,64 @@
+.cart {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  margin-top: 24px;
+}
+
+.cart-table, .breakdown-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+
+.cart-table th, .cart-table td,
+.breakdown-table th, .breakdown-table td {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.9rem;
+}
+
+.qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.subtotal {
+  font-size: 1.05rem;
+  margin: 12px 0;
+}
+
+.coupon-row {
+  display: flex;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.coupon-row input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+
+.checkout-error {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.checkout-result {
+  margin-top: 20px;
+  border-top: 2px dashed #e5e7eb;
+  padding-top: 16px;
+}
+
+.totals {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+}
+.totals li { padding: 4px 0; }
+.totals .final { font-size: 1.1rem; color: #2563eb; }

@@ -29,7 +29,7 @@ export class CategoryDiscountRule implements DiscountRule {
     return {
       amountApplied,
       newSubtotal,
-      description: `10% sobre ${techLines.length} línea(s) de categoría Tecnologia (base $${techLinesTotal.toFixed(2)}).`
+      description: `10% por categoría Tecnologia (base $${techLinesTotal.toFixed(2)}).`
     };
   }
 }

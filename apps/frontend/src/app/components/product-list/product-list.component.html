@@ -1,0 +1,32 @@
+<div class="product-list">
+  <h2>Catálogo</h2>
+
+  <p *ngIf="loading()">Cargando productos...</p>
+  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+
+  <div class="grid" *ngIf="!loading() && !errorMessage()">
+    <div class="card" *ngFor="let product of products()">
+      <div class="card-header">
+        <span class="name">{{ product.name }}</span>
+        <span class="category">{{ product.category }}</span>
+      </div>
+      <div class="price">${{ product.price.toFixed(2) }}</div>
+      <div class="stock">
+        Stock: {{ product.stock }}
+        <span *ngIf="quantityInCart(product.id) > 0"> · en carrito: {{ quantityInCart(product.id) }}</span>
+      </div>
+
+      <button
+        class="btn btn-primary"
+        [disabled]="quantityInCart(product.id) >= product.stock"
+        (click)="addToCart(product)"
+      >
+        Agregar al carrito
+      </button>
+
+      <p class="stock-warning" *ngIf="stockWarningId() === product.id">
+        No hay más stock disponible de este producto.
+      </p>
+    </div>
+  </div>
+</div>

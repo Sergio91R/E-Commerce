@@ -1,4 +1,3 @@
-process.env.CHROME_BIN = require('puppeteer').executablePath ? require('puppeteer').executablePath() : process.env.CHROME_BIN;
 module.exports = function (config) {
   config.set({
     basePath: '',
