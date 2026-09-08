@@ -1,0 +1,7 @@
+{
+  "name": "@examen-ecommerce/shared-types",
+  "version": "1.0.0",
+  "description": "Tipos y contratos compartidos entre backend y frontend",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}
