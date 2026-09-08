@@ -1,7 +1,27 @@
+# Dependencias
 node_modules/
+
+# Builds
 dist/
+out-tsc/
 .angular/
+
+# Cobertura de tests
 coverage/
+
+# Datos persistidos en runtime (no es código, se regenera solo)
+apps/backend/orders.json
+
+# Logs
+npm-debug.log*
+*.log
+
+# Entornos / secretos
 .env
-.env.*
-!.env.example
+.env.local
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
