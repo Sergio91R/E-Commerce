@@ -1,10 +1,16 @@
-<div class="product-list">
+<div class="product-list" [class.locked]="orderConfirmationService.isLocked()">
   <h2>Catálogo</h2>
+
+  <div class="locked-overlay" *ngIf="orderConfirmationService.isLocked()">
+    <p>✅ Ya confirmaste una compra.</p>
+    <p>Hacé click en <strong>"Hacer una nueva compra"</strong> desde el carrito para seguir comprando.</p>
+    <button class="btn btn-primary" (click)="cartDrawerService.open()">Ver orden confirmada</button>
+  </div>
 
   <p *ngIf="loading()">Cargando productos...</p>
   <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
 
-  <div class="grid" *ngIf="!loading() && !errorMessage()">
+  <div class="grid" *ngIf="!loading() && !errorMessage()" [attr.inert]="orderConfirmationService.isLocked() ? true : null">
     <div class="card" *ngFor="let product of products()">
       <div class="card-header">
         <span class="name">{{ product.name }}</span>
@@ -18,7 +24,7 @@
 
       <button
         class="btn btn-primary"
-        [disabled]="quantityInCart(product.id) >= product.stock"
+        [disabled]="quantityInCart(product.id) >= product.stock || orderConfirmationService.isLocked()"
         (click)="addToCart(product)"
       >
         Agregar al carrito
