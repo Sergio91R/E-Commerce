@@ -28,7 +28,14 @@
 
 .name { font-weight: 700; }
 .category { color: #6b7280; }
+.sku {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  letter-spacing: 0.02em;
+}
 .price { font-size: 1.2rem; font-weight: 700; color: #2563eb; }
+.price-unit { font-size: 0.8rem; font-weight: 500; color: #9ca3af; }
 .stock { font-size: 0.85rem; color: #6b7280; }
 .stock-warning { color: #dc2626; font-size: 0.8rem; margin: 0; }
 .error { color: #dc2626; }

@@ -1,9 +1,10 @@
 import { CartItemDTO, DiscountBreakdownEntry } from '@shared/index';
-import { Order, OrderRepository } from '../../domain/Order';
+import { NewOrder, Order, OrderRepository } from '../../domain/Order';
 import { SqliteDatabase } from './sqliteDatabase';
 
 interface OrderRow {
   order_id: string;
+  order_number: number;
   items: string;
   coupon_code: string | null;
   original_subtotal: number;
@@ -24,17 +25,24 @@ interface OrderRow {
 export class SqliteOrderRepository implements OrderRepository {
   public constructor(private readonly db: SqliteDatabase) {}
 
-  public save(order: Order): void {
+  public save(order: NewOrder): number {
+    const orderNumber = (
+      this.db.prepare('SELECT COALESCE(MAX(order_number), 0) + 1 AS next FROM orders').get() as {
+        next: number;
+      }
+    ).next;
+
     this.db
       .prepare(
         `INSERT INTO orders (
-          order_id, items, coupon_code, original_subtotal, discount_breakdown,
+          order_id, order_number, items, coupon_code, original_subtotal, discount_breakdown,
           total_discount_amount, effective_discount_percentage, discount_cap_reached,
           final_total, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         order.orderId,
+        orderNumber,
         JSON.stringify(order.items),
         order.couponCode ?? null,
         order.originalSubtotal,
@@ -45,6 +53,8 @@ export class SqliteOrderRepository implements OrderRepository {
         order.finalTotal,
         order.createdAt
       );
+
+    return orderNumber;
   }
 
   public findById(orderId: string): Order | undefined {
@@ -57,6 +67,7 @@ export class SqliteOrderRepository implements OrderRepository {
 
     return {
       orderId: row.order_id,
+      orderNumber: row.order_number,
       items: JSON.parse(row.items) as CartItemDTO[],
       couponCode: row.coupon_code ?? undefined,
       originalSubtotal: row.original_subtotal,

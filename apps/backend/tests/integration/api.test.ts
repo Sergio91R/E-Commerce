@@ -47,6 +47,7 @@ describe('API REST - /api/products y /api/checkout', () => {
 
     expect(response.status).toBe(201);
     expect(response.body.orderId).toBeDefined();
+    expect(response.body.orderNumber).toBe(1);
     expect(response.body.discountBreakdown.length).toBeGreaterThan(0);
     expect(response.body.finalTotal).toBeLessThan(response.body.originalSubtotal);
   });

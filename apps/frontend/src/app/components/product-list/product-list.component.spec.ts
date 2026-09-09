@@ -12,6 +12,7 @@ const laptopStockDown: Product = { ...laptop, stock: 4 };
 
 const confirmedOrder: CheckoutResponseDTO = {
   orderId: 'abc123',
+  orderNumber: 1,
   originalSubtotal: 650,
   discountBreakdown: [],
   totalDiscountAmount: 0,

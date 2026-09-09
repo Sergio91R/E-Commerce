@@ -4,6 +4,7 @@ import { CheckoutResponseDTO } from '../models/shared';
 
 const order: CheckoutResponseDTO = {
   orderId: 'abc123',
+  orderNumber: 1,
   originalSubtotal: 100,
   discountBreakdown: [],
   totalDiscountAmount: 0,

@@ -61,9 +61,13 @@ export interface CheckoutPreviewResponseDTO {
  * Resultado de una compra CONFIRMADA: además del cálculo, incluye el id de
  * la orden persistida y la fecha de creación. El backend decrementa stock
  * real solo en este flujo, nunca en el preview.
+ *
+ * - `orderId`: UUID único, estable, para búsquedas / trazabilidad.
+ * - `orderNumber`: correlativo legible (1, 2, 3…) para mostrar al usuario.
  */
 export interface CheckoutResponseDTO extends CheckoutPreviewResponseDTO {
   orderId: string;
+  orderNumber: number;
   createdAt: string;
 }
 

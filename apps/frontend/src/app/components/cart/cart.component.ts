@@ -48,6 +48,13 @@ export class CartComponent {
   public readonly confirmedOrder: Signal<CheckoutResponseDTO | null>;
 
   private previewDebounceHandle: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * Secuencia monótona de previews. Cada `/api/cart/calculate` que se
+   * dispara toma el valor actual; cuando su respuesta llega, se ignora si
+   * ya salió un preview más nuevo. Sin esto, una respuesta lenta de un
+   * carrito viejo puede pisar el desglose del carrito actual (HU2).
+   */
+  private previewRequestSeq = 0;
 
   public constructor(
     public readonly cartService: CartService,
@@ -152,6 +159,9 @@ export class CartComponent {
         this.couponInput.set('');
         this.appliedCouponCode.set('');
         this.couponFieldError.set(null);
+        // Invalida cualquier preview en vuelo para que no reaparezca un
+        // desglose después de cerrar la compra.
+        this.previewRequestSeq++;
         this.preview.set(null);
       },
       error: (err: CheckoutApiError) => {
@@ -180,22 +190,29 @@ export class CartComponent {
   private runPreview(): void {
     const items = this.cartService.toCartItemDTOs();
     const coupon = this.appliedCouponCode();
+    const requestId = ++this.previewRequestSeq;
 
     this.checkoutService.preview(items, coupon).subscribe({
       next: (result) => {
+        if (this.isStalePreview(requestId)) {
+          return;
+        }
         this.preview.set(result);
         this.previewError.set(null);
         this.couponFieldError.set(null);
         this.previewLoading.set(false);
       },
       error: (err: CheckoutApiError) => {
+        if (this.isStalePreview(requestId)) {
+          return;
+        }
         if (err.apiError.code === 'INVALID_COUPON') {
           // El cupón no existe/expiró: se lo avisamos bajo el input, pero
           // igual mostramos el desglose SIN cupón para no dejar al usuario
           // sin información de categoría/volumen mientras lo corrige.
           this.couponFieldError.set('El cupón no existe o está expirado.');
           this.previewError.set(null);
-          this.retryPreviewWithoutCoupon(items);
+          this.retryPreviewWithoutCoupon(items, requestId);
           return;
         }
 
@@ -206,16 +223,27 @@ export class CartComponent {
     });
   }
 
-  private retryPreviewWithoutCoupon(items: CartItemDTO[]): void {
+  private retryPreviewWithoutCoupon(items: CartItemDTO[], requestId: number): void {
     this.checkoutService.preview(items, undefined).subscribe({
       next: (result) => {
+        if (this.isStalePreview(requestId)) {
+          return;
+        }
         this.preview.set(result);
         this.previewLoading.set(false);
       },
       error: () => {
+        if (this.isStalePreview(requestId)) {
+          return;
+        }
         this.preview.set(null);
         this.previewLoading.set(false);
       }
     });
+  }
+
+  /** `true` si ya se disparó un preview más nuevo: esta respuesta quedó obsoleta. */
+  private isStalePreview(requestId: number): boolean {
+    return requestId !== this.previewRequestSeq;
   }
 }

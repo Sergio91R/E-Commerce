@@ -12,7 +12,7 @@ import { CartDrawerService } from './services/cart-drawer.service';
   template: `
     <div class="container">
       <header class="app-header">
-        <h1>Core E-Commerce · Checkout con Descuentos Acumulativos</h1>
+        <h1>Market Shop</h1>
 
         <button
           class="cart-icon-btn"

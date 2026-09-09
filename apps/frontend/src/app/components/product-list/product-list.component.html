@@ -1,5 +1,5 @@
 <div class="product-list" [class.locked]="orderConfirmationService.isLocked()">
-  <h2>Catálogo</h2>
+  <h2>Productos</h2>
 
   <div class="locked-overlay" *ngIf="orderConfirmationService.isLocked()">
     <p>✅ Ya confirmaste una compra.</p>
@@ -16,10 +16,13 @@
         <span class="name">{{ product.name }}</span>
         <span class="category">{{ product.category }}</span>
       </div>
-      <div class="price">${{ product.price.toFixed(2) }}</div>
+      <div class="sku">ID: {{ product.id }}</div>
+      <div class="price">${{ product.price.toFixed(2) }} <span class="price-unit">c/u</span></div>
       <div class="stock">
-        Stock: {{ availableStock(product) }}
-        <span *ngIf="quantityInCart(product.id) > 0"> · en carrito: {{ quantityInCart(product.id) }}</span>
+        Stock inicial: {{ product.stock }}
+        <span *ngIf="quantityInCart(product.id) > 0">
+          · disponible: {{ availableStock(product) }} · en carrito: {{ quantityInCart(product.id) }}
+        </span>
       </div>
 
       <button

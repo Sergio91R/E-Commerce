@@ -1,12 +1,12 @@
 import { createDatabase } from '../../src/infrastructure/persistence/sqliteDatabase';
 import { SqliteOrderRepository } from '../../src/infrastructure/persistence/SqliteOrderRepository';
-import { Order } from '../../src/domain/Order';
+import { NewOrder } from '../../src/domain/Order';
 
 function buildRepo() {
   return new SqliteOrderRepository(createDatabase(':memory:'));
 }
 
-const baseOrder: Order = {
+const baseOrder: NewOrder = {
   orderId: 'ord-1',
   items: [
     { productId: 'p1', quantity: 2 },
@@ -28,9 +28,18 @@ const baseOrder: Order = {
 describe('SqliteOrderRepository', () => {
   it('persiste y recupera una orden con todos sus campos (incluidos los compuestos)', () => {
     const repo = buildRepo();
-    repo.save(baseOrder);
+    const orderNumber = repo.save(baseOrder);
 
-    expect(repo.findById('ord-1')).toEqual(baseOrder);
+    expect(orderNumber).toBe(1);
+    expect(repo.findById('ord-1')).toEqual({ ...baseOrder, orderNumber: 1 });
+  });
+
+  it('asigna orderNumber correlativo y lo devuelve en cada save', () => {
+    const repo = buildRepo();
+    expect(repo.save(baseOrder)).toBe(1);
+    expect(repo.save({ ...baseOrder, orderId: 'ord-2' })).toBe(2);
+    expect(repo.save({ ...baseOrder, orderId: 'ord-3' })).toBe(3);
+    expect(repo.findById('ord-2')?.orderNumber).toBe(2);
   });
 
   it('preserva el flag discountCapReached=true como booleano', () => {

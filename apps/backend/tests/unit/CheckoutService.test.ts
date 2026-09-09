@@ -3,7 +3,7 @@ import { InMemoryProductRepository } from '../../src/domain/ProductRepository';
 import { InMemoryCouponRepository } from '../../src/domain/discounts/CouponRepository';
 import { DiscountRuleFactory } from '../../src/domain/discounts/DiscountRuleFactory';
 import { DiscountEngine } from '../../src/domain/discounts/DiscountEngine';
-import { OrderRepository, Order } from '../../src/domain/Order';
+import { NewOrder, OrderRepository, Order } from '../../src/domain/Order';
 import {
   EmptyCartError,
   InvalidCartDataError,
@@ -14,8 +14,10 @@ import { Product } from '@shared/index';
 
 class InMemoryOrderRepository implements OrderRepository {
   public readonly saved: Order[] = [];
-  public save(order: Order): void {
-    this.saved.push(order);
+  public save(order: NewOrder): number {
+    const orderNumber = this.saved.length + 1;
+    this.saved.push({ ...order, orderNumber });
+    return orderNumber;
   }
   public findById(orderId: string): Order | undefined {
     return this.saved.find((o) => o.orderId === orderId);
@@ -84,6 +86,15 @@ describe('CheckoutService - validaciones y edge cases', () => {
     expect(orderRepository.saved).toHaveLength(1);
     expect(orderRepository.saved[0].orderId).toBe(response.orderId);
     expect(response.discountBreakdown.length).toBeGreaterThan(0);
+  });
+
+  it('asigna un orderNumber correlativo (1, 2, 3…) por cada compra', () => {
+    const { service } = buildService();
+    const first = service.checkout([{ productId: 'p1', quantity: 1 }], undefined);
+    const second = service.checkout([{ productId: 'p1', quantity: 1 }], undefined);
+
+    expect(first.orderNumber).toBe(1);
+    expect(second.orderNumber).toBe(2);
   });
 });
 

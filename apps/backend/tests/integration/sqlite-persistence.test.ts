@@ -33,6 +33,21 @@ describe('Integración - persistencia SQLite vía HTTP', () => {
     expect(stockAfter).toBe(stockBefore - 4);
   });
 
+  it('las órdenes reciben un orderNumber correlativo persistido en SQLite', async () => {
+    const app = createApp();
+
+    const first = await request(app)
+      .post('/api/checkout')
+      .send({ items: [{ productId: 'p2', quantity: 1 }] });
+    const second = await request(app)
+      .post('/api/checkout')
+      .send({ items: [{ productId: 'p3', quantity: 1 }] });
+
+    expect(first.body.orderNumber).toBe(1);
+    expect(second.body.orderNumber).toBe(2);
+    expect(typeof first.body.orderId).toBe('string');
+  });
+
   it('el cupón WELCOME2026 vive en la tabla coupons y aplica el 15%', async () => {
     const app = createApp();
     const res = await request(app)

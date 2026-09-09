@@ -16,7 +16,8 @@
   <div class="cart">
     <!-- Confirmación de una compra ya cerrada: se muestra sola, sin el carrito editable -->
     <div class="confirmed-order" *ngIf="confirmedOrder() as order">
-      <h3>✅ Orden confirmada #{{ order.orderId.slice(0, 8) }}</h3>
+      <h3>✅ Orden confirmada #{{ order.orderNumber }}</h3>
+      <p class="order-id">ID: {{ order.orderId }}</p>
 
       <app-discount-alert [capReached]="order.discountCapReached"></app-discount-alert>
 

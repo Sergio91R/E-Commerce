@@ -44,7 +44,7 @@ export class CheckoutService {
     const createdAt = new Date().toISOString();
     const preview = this.toPreviewDTO(calculation);
 
-    this.orderRepository.save({
+    const orderNumber = this.orderRepository.save({
       orderId,
       items,
       couponCode,
@@ -52,7 +52,7 @@ export class CheckoutService {
       ...preview
     });
 
-    return { orderId, createdAt, ...preview };
+    return { orderId, orderNumber, createdAt, ...preview };
   }
 
   private toPreviewDTO(calculation: DiscountCalculationResult): CheckoutPreviewResponseDTO {

@@ -57,6 +57,29 @@ describe('CartComponent', () => {
     expect(fixture.componentInstance.preview()).toEqual(emptyPreview);
   }));
 
+  it('descarta una respuesta de preview obsoleta que llega después de una más nueva', fakeAsync(() => {
+    fixture.detectChanges();
+
+    cartService.addItem(laptop); // carrito: 1
+    fixture.detectChanges();
+    tick(300); // dispara request A (qty 1)
+
+    cartService.addItem(laptop); // carrito: 2
+    fixture.detectChanges();
+    tick(300); // dispara request B (qty 2)
+
+    const reqs = httpMock.match(previewUrl);
+    expect(reqs.length).toBe(2);
+
+    const previewQty2: CheckoutPreviewResponseDTO = { ...emptyPreview, originalSubtotal: 1300, finalTotal: 1300 };
+    const previewQty1: CheckoutPreviewResponseDTO = { ...emptyPreview, originalSubtotal: 650, finalTotal: 650 };
+
+    reqs[1].flush(previewQty2); // la respuesta NUEVA llega primero
+    reqs[0].flush(previewQty1); // la VIEJA llega después -> debe ignorarse
+
+    expect(fixture.componentInstance.preview()).toEqual(previewQty2);
+  }));
+
   it('al quitar el último producto, el preview vuelve a null sin llamar al backend de nuevo', fakeAsync(() => {
     fixture.detectChanges();
     cartService.addItem(laptop);
@@ -106,6 +129,7 @@ describe('CartComponent', () => {
     const req = httpMock.expectOne(checkoutUrl);
     const response: CheckoutResponseDTO = {
       orderId: 'abc12345-0000-0000-0000-000000000000',
+      orderNumber: 1,
       originalSubtotal: 650,
       discountBreakdown: [],
       totalDiscountAmount: 227.5,
@@ -148,7 +172,7 @@ describe('CartComponent', () => {
 
     fixture.componentInstance.confirmPurchase();
     httpMock.expectOne(checkoutUrl).flush({
-      orderId: 'xyz', originalSubtotal: 650, discountBreakdown: [], totalDiscountAmount: 0,
+      orderId: 'xyz', orderNumber: 1, originalSubtotal: 650, discountBreakdown: [], totalDiscountAmount: 0,
       effectiveDiscountPercentage: 0, discountCapReached: false, finalTotal: 650, createdAt: new Date().toISOString()
     } as CheckoutResponseDTO);
     fixture.detectChanges();
@@ -168,7 +192,7 @@ describe('CartComponent', () => {
     fixture.componentInstance.cartDrawerService.open();
     fixture.componentInstance.confirmPurchase();
     httpMock.expectOne(checkoutUrl).flush({
-      orderId: 'xyz', originalSubtotal: 650, discountBreakdown: [], totalDiscountAmount: 0,
+      orderId: 'xyz', orderNumber: 1, originalSubtotal: 650, discountBreakdown: [], totalDiscountAmount: 0,
       effectiveDiscountPercentage: 0, discountCapReached: false, finalTotal: 650, createdAt: new Date().toISOString()
     } as CheckoutResponseDTO);
     fixture.detectChanges();
@@ -315,7 +339,7 @@ describe('CartComponent', () => {
     const req = httpMock.expectOne(checkoutUrl);
     expect(req.request.body).toEqual({ items: [{ productId: 'p1', quantity: 1 }] });
     req.flush({
-      orderId: 'ok-123', originalSubtotal: 650, discountBreakdown: [], totalDiscountAmount: 0,
+      orderId: 'ok-123', orderNumber: 1, originalSubtotal: 650, discountBreakdown: [], totalDiscountAmount: 0,
       effectiveDiscountPercentage: 0, discountCapReached: false, finalTotal: 650, createdAt: new Date().toISOString()
     } as CheckoutResponseDTO);
 

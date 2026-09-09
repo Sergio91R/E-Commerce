@@ -75,6 +75,12 @@ infrastructure/      <- Detalles: Express, SQLite
 | POST | `/api/cart/calculate` | `CheckoutService` | Preview del desglose de descuentos, sin efectos secundarios |
 | POST | `/api/checkout` | `CheckoutService` | Confirma la compra: decrementa stock y persiste la orden |
 
+La respuesta de `/api/checkout` trae dos identificadores: `orderId` (UUID
+único y estable, para trazabilidad) y `orderNumber` (correlativo `1, 2, 3…`
+que asigna el `OrderRepository` al persistir y es el que se muestra al
+usuario). El correlativo lo calcula el repositorio (`MAX(order_number)+1`
+en SQLite), no el caso de uso: es responsabilidad del almacenamiento.
+
 El alta/edición de catálogo se separó en `CatalogService` (no en `CheckoutService`) por responsabilidad única: checkout **consume** el catálogo, catalog lo **administra**. Ambos dependen solo de la interfaz `ProductRepository`. No hay autenticación: es un MVP; en producción estos dos endpoints irían detrás de un rol de administración.
 
 ## 4. Patrones de diseño implementados

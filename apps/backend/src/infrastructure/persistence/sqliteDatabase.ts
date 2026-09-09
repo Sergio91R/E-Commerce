@@ -32,6 +32,7 @@ const SCHEMA_SQL = `
 
   CREATE TABLE IF NOT EXISTS orders (
     order_id                      TEXT    PRIMARY KEY,
+    order_number                  INTEGER NOT NULL UNIQUE,
     items                         TEXT    NOT NULL,
     coupon_code                   TEXT,
     original_subtotal             REAL    NOT NULL,
