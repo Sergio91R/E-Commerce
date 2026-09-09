@@ -113,7 +113,9 @@ están vacías— se siembran:
   `apps/backend/seed/products.json` (ya no están embebidos en código TS),
   incluyendo varios de categoría "Tecnologia" (`p1` Laptop $650, `p2` Mouse $18,
   `p3` Audífonos $45, `p10` Monitor $130) para disparar la Regla de Categoría en
-  la demo.
+  la demo. Cada uno referencia una ilustración propia en
+  `apps/frontend/src/assets/products/pN.svg` (una por producto, sin dependencias
+  externas); el frontend muestra un `📷` si falta o no carga.
 - El cupón `WELCOME2026` (15%).
 
 Una vez creada la base, la API **siempre** lee el catálogo desde SQLite; el

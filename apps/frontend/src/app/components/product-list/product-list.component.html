@@ -12,6 +12,18 @@
 
   <div class="grid" *ngIf="!loading() && !errorMessage()" [attr.inert]="orderConfirmationService.isLocked() ? true : null">
     <div class="card" *ngFor="let product of products()">
+      <img
+        *ngIf="product.imageUrl && !failedImages.has(product.id); else noImg"
+        class="product-img"
+        [src]="product.imageUrl"
+        [alt]="product.name"
+        loading="lazy"
+        (error)="failedImages.add(product.id)"
+      />
+      <ng-template #noImg>
+        <div class="product-img product-img--empty" aria-hidden="true">📷</div>
+      </ng-template>
+
       <div class="card-header">
         <span class="name">{{ product.name }}</span>
         <span class="category">{{ product.category }}</span>

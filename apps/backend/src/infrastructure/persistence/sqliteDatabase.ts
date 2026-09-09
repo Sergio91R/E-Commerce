@@ -16,11 +16,12 @@ export type SqliteDatabase = DatabaseSync;
  */
 const SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS products (
-    id       TEXT    PRIMARY KEY,
-    name     TEXT    NOT NULL,
-    price    REAL    NOT NULL,
-    category TEXT    NOT NULL,
-    stock    INTEGER NOT NULL
+    id        TEXT    PRIMARY KEY,
+    name      TEXT    NOT NULL,
+    price     REAL    NOT NULL,
+    category  TEXT    NOT NULL,
+    stock     INTEGER NOT NULL,
+    image_url TEXT
   );
 
   CREATE TABLE IF NOT EXISTS coupons (
@@ -87,10 +88,17 @@ function seedIfEmpty(db: SqliteDatabase): void {
   const productCount = (db.prepare('SELECT COUNT(*) AS n FROM products').get() as { n: number }).n;
   if (productCount === 0) {
     const insertProduct = db.prepare(
-      'INSERT INTO products (id, name, price, category, stock) VALUES (?, ?, ?, ?, ?)'
+      'INSERT INTO products (id, name, price, category, stock, image_url) VALUES (?, ?, ?, ?, ?, ?)'
     );
     for (const product of SEED_PRODUCTS) {
-      insertProduct.run(product.id, product.name, product.price, product.category, product.stock);
+      insertProduct.run(
+        product.id,
+        product.name,
+        product.price,
+        product.category,
+        product.stock,
+        product.imageUrl ?? null
+      );
     }
   }
 

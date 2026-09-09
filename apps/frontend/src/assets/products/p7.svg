@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Zapatillas running">
+  <rect width="400" height="300" fill="#ecfdf5"/>
+  <path d="M58 196 q0 -44 44 -54 l34 -8 20 26 44 6 66 26 q34 14 34 36 v12 H60 q-2 -22 -2 -68 Z" fill="#059669"/>
+  <rect x="58" y="212" width="270" height="18" rx="9" fill="#065f46"/>
+  <path d="M150 150 l16 22 M178 148 l13 24 M206 150 l11 24" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+</svg>

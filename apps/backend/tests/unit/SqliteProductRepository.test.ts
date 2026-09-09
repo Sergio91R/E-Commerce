@@ -44,18 +44,32 @@ describe('SqliteProductRepository', () => {
     expect(() => repo.decrementStock('fantasma', 1)).not.toThrow();
   });
 
-  it('create inserta un producto nuevo y queda en findAll/findById', () => {
+  it('create inserta un producto nuevo (con imageUrl) y queda en findAll/findById', () => {
     const { repo } = buildRepo();
-    repo.create({ id: 'p11', name: 'Teclado', price: 40, category: 'Tecnologia', stock: 30 });
+    repo.create({
+      id: 'p11',
+      name: 'Teclado',
+      price: 40,
+      category: 'Tecnologia',
+      stock: 30,
+      imageUrl: '/assets/products/p11.svg'
+    });
 
     expect(repo.findById('p11')).toEqual({
       id: 'p11',
       name: 'Teclado',
       price: 40,
       category: 'Tecnologia',
-      stock: 30
+      stock: 30,
+      imageUrl: '/assets/products/p11.svg'
     });
     expect(repo.findAll()).toHaveLength(SEED_PRODUCTS.length + 1);
+  });
+
+  it('un producto sin imageUrl no expone la propiedad (image_url NULL)', () => {
+    const { repo } = buildRepo();
+    repo.create({ id: 'p12', name: 'Sin foto', price: 5, category: 'Hogar', stock: 1 });
+    expect(repo.findById('p12')).not.toHaveProperty('imageUrl');
   });
 
   it('create sobre un id existente falla (PRIMARY KEY)', () => {
@@ -65,13 +79,14 @@ describe('SqliteProductRepository', () => {
     ).toThrow();
   });
 
-  it('update aplica solo los campos enviados', () => {
+  it('update aplica solo los campos enviados (incluido imageUrl)', () => {
     const { repo } = buildRepo();
-    repo.update('p1', { price: 999, stock: 2 });
+    repo.update('p1', { price: 999, stock: 2, imageUrl: '/assets/products/nuevo.svg' });
 
     const p1 = repo.findById('p1')!;
     expect(p1.price).toBe(999);
     expect(p1.stock).toBe(2);
+    expect(p1.imageUrl).toBe('/assets/products/nuevo.svg');
     expect(p1.name).toBe('Laptop 14" Ryzen 5'); // intacto
   });
 

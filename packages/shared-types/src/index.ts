@@ -14,6 +14,8 @@ export interface Product {
   price: number;
   category: ProductCategory;
   stock: number;
+  /** URL de la foto del producto (ruta local `/assets/...` o URL http). Opcional. */
+  imageUrl?: string;
 }
 
 /** Cuerpo para crear un producto en el catálogo (`POST /api/products`). */

@@ -71,7 +71,9 @@ infrastructure/      <- Detalles: Express, SQLite
 |---|---|---|---|
 | GET | `/api/products` | `CatalogService` | Lista el catálogo (desde SQLite) |
 | POST | `/api/products` | `CatalogService` | Alta de producto. `201` / `409 PRODUCT_ALREADY_EXISTS` / `400 INVALID_PRODUCT_DATA` |
-| PUT | `/api/products/:id` | `CatalogService` | Edición parcial (nombre, precio, categoría, stock). `200` / `404 PRODUCT_NOT_FOUND` / `400` |
+| PUT | `/api/products/:id` | `CatalogService` | Edición parcial (nombre, precio, categoría, stock, `imageUrl`). `200` / `404 PRODUCT_NOT_FOUND` / `400` |
+
+`Product` incluye `imageUrl?` (opcional, columna `image_url` en SQLite). `CatalogService` lo valida: URL `http(s)`, ruta absoluta `/...` o `data:` URI de imagen. El catálogo semilla usa ilustraciones SVG propias en `apps/frontend/src/assets/products/`; el frontend cae a un placeholder `📷` si el producto no tiene foto o si la imagen no carga.
 | POST | `/api/cart/calculate` | `CheckoutService` | Preview del desglose de descuentos, sin efectos secundarios |
 | POST | `/api/checkout` | `CheckoutService` | Confirma la compra: decrementa stock y persiste la orden |
 

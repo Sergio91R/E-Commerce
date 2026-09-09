@@ -51,6 +51,36 @@ describe('ProductListComponent', () => {
     expect(cartService.lines().length).toBe(1);
   });
 
+  it('renderiza la foto del producto cuando trae imageUrl', () => {
+    fixture.componentInstance.products.set([{ ...laptop, imageUrl: '/assets/products/p1.svg' }]);
+    fixture.detectChanges();
+
+    const img = fixture.debugElement.query(By.css('img.product-img'));
+    expect(img).not.toBeNull();
+    expect(img.nativeElement.getAttribute('src')).toBe('/assets/products/p1.svg');
+    expect(fixture.debugElement.query(By.css('.product-img--empty'))).toBeNull();
+  });
+
+  it('muestra el placeholder 📷 cuando el producto no tiene imageUrl', () => {
+    // el `laptop` del beforeEach no trae imageUrl
+    expect(fixture.debugElement.query(By.css('img.product-img'))).toBeNull();
+    const ph = fixture.debugElement.query(By.css('.product-img--empty'));
+    expect(ph).not.toBeNull();
+    expect(ph.nativeElement.textContent).toContain('📷');
+  });
+
+  it('cae al placeholder si la foto falla (evento error de la img)', () => {
+    fixture.componentInstance.products.set([{ ...laptop, imageUrl: '/assets/products/roto.svg' }]);
+    fixture.detectChanges();
+
+    fixture.debugElement.query(By.css('img.product-img')).triggerEventHandler('error', {});
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.failedImages.has('p1')).toBe(true);
+    expect(fixture.debugElement.query(By.css('img.product-img'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.product-img--empty'))).not.toBeNull();
+  });
+
   it('no muestra el overlay de bloqueo cuando no hay orden confirmada', () => {
     const overlay = fixture.debugElement.query(By.css('.locked-overlay'));
     expect(overlay).toBeNull();

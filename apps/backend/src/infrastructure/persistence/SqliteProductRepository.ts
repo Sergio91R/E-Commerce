@@ -8,7 +8,10 @@ interface ProductRow {
   price: number;
   category: string;
   stock: number;
+  image_url: string | null;
 }
+
+const SELECT_COLUMNS = 'id, name, price, category, stock, image_url';
 
 /**
  * Implementación de `ProductRepository` respaldada en SQLite. Mantiene las
@@ -20,14 +23,14 @@ export class SqliteProductRepository implements ProductRepository {
 
   public findAll(): Product[] {
     const rows = this.db
-      .prepare('SELECT id, name, price, category, stock FROM products ORDER BY rowid')
+      .prepare(`SELECT ${SELECT_COLUMNS} FROM products ORDER BY rowid`)
       .all() as ProductRow[];
     return rows.map(toProduct);
   }
 
   public findById(id: string): Product | undefined {
     const row = this.db
-      .prepare('SELECT id, name, price, category, stock FROM products WHERE id = ?')
+      .prepare(`SELECT ${SELECT_COLUMNS} FROM products WHERE id = ?`)
       .get(id) as ProductRow | undefined;
     return row ? toProduct(row) : undefined;
   }
@@ -42,8 +45,17 @@ export class SqliteProductRepository implements ProductRepository {
     // La unicidad del id ya la validó `CatalogService` (findById previo);
     // el PRIMARY KEY de la tabla es la última red de seguridad.
     this.db
-      .prepare('INSERT INTO products (id, name, price, category, stock) VALUES (?, ?, ?, ?, ?)')
-      .run(product.id, product.name, product.price, product.category, product.stock);
+      .prepare(
+        'INSERT INTO products (id, name, price, category, stock, image_url) VALUES (?, ?, ?, ?, ?, ?)'
+      )
+      .run(
+        product.id,
+        product.name,
+        product.price,
+        product.category,
+        product.stock,
+        product.imageUrl ?? null
+      );
   }
 
   public update(id: string, changes: ProductChanges): void {
@@ -51,7 +63,8 @@ export class SqliteProductRepository implements ProductRepository {
       name: 'name',
       price: 'price',
       category: 'category',
-      stock: 'stock'
+      stock: 'stock',
+      imageUrl: 'image_url'
     };
     const sets: string[] = [];
     const values: Array<string | number> = [];
@@ -71,7 +84,7 @@ export class SqliteProductRepository implements ProductRepository {
 }
 
 function toProduct(row: ProductRow): Product {
-  return {
+  const product: Product = {
     id: row.id,
     name: row.name,
     price: row.price,
@@ -80,4 +93,8 @@ function toProduct(row: ProductRow): Product {
     category: row.category as ProductCategory,
     stock: row.stock
   };
+  if (row.image_url) {
+    product.imageUrl = row.image_url;
+  }
+  return product;
 }

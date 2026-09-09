@@ -14,6 +14,7 @@ describe('Integración - persistencia SQLite vía HTTP', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(10);
     expect(res.body[0].id).toBe('p1');
+    expect(res.body[0].imageUrl).toBe('/assets/products/p1.svg');
   });
 
   it('POST /api/checkout decrementa el stock de forma persistente en la misma instancia', async () => {
@@ -69,7 +70,14 @@ describe('Integración - persistencia SQLite vía HTTP', () => {
 });
 
 describe('Integración - alta y edición de catálogo vía HTTP', () => {
-  const nuevo = { id: 'p50', name: 'Webcam 1080p', price: 55, category: 'Tecnologia', stock: 12 };
+  const nuevo = {
+    id: 'p50',
+    name: 'Webcam 1080p',
+    price: 55,
+    category: 'Tecnologia',
+    stock: 12,
+    imageUrl: '/assets/products/p50.svg'
+  };
 
   it('POST /api/products crea el producto y aparece en GET /api/products', async () => {
     const app = createApp();

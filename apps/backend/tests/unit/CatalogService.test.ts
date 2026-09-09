@@ -14,7 +14,14 @@ function build() {
   return { repo, service: new CatalogService(repo) };
 }
 
-const validNew = { id: 'p99', name: 'Teclado', price: 40, category: 'Tecnologia', stock: 30 };
+const validNew = {
+  id: 'p99',
+  name: 'Teclado',
+  price: 40,
+  category: 'Tecnologia',
+  stock: 30,
+  imageUrl: '/assets/products/p99.svg'
+};
 
 describe('CatalogService.createProduct', () => {
   it('da de alta un producto válido y lo deja consultable', () => {
@@ -39,7 +46,9 @@ describe('CatalogService.createProduct', () => {
     ['price no numérico', { ...validNew, price: 'gratis' }],
     ['stock negativo', { ...validNew, stock: -1 }],
     ['stock no entero', { ...validNew, stock: 2.5 }],
-    ['category fuera de la lista', { ...validNew, category: 'Mascotas' }]
+    ['category fuera de la lista', { ...validNew, category: 'Mascotas' }],
+    ['imageUrl vacío', { ...validNew, imageUrl: '   ' }],
+    ['imageUrl con esquema no permitido', { ...validNew, imageUrl: 'javascript:alert(1)' }]
   ])('rechaza payload inválido: %s', (_label, payload) => {
     const { service } = build();
     expect(() => service.createProduct(payload)).toThrow(InvalidProductDataError);
@@ -50,6 +59,31 @@ describe('CatalogService.createProduct', () => {
     expect(() => service.createProduct({ ...validNew, price: -5 })).toThrow();
     expect(repo.findAll()).toHaveLength(1);
   });
+
+  it('imageUrl es opcional: se puede crear un producto sin foto', () => {
+    const { service } = build();
+    const created = service.createProduct({
+      id: 'p98',
+      name: 'Sin foto',
+      price: 10,
+      category: 'Hogar',
+      stock: 3
+    });
+    expect(created.imageUrl).toBeUndefined();
+  });
+
+  it('acepta rutas absolutas, http(s) y data URIs como imageUrl', () => {
+    const { service } = build();
+    expect(service.createProduct({ ...validNew, id: 'a', imageUrl: '/assets/x.svg' }).imageUrl).toBe(
+      '/assets/x.svg'
+    );
+    expect(
+      service.createProduct({ ...validNew, id: 'b', imageUrl: 'https://cdn.test/x.png' }).imageUrl
+    ).toBe('https://cdn.test/x.png');
+    expect(
+      service.createProduct({ ...validNew, id: 'c', imageUrl: 'data:image/png;base64,AAAA' }).imageUrl
+    ).toBe('data:image/png;base64,AAAA');
+  });
 });
 
 describe('CatalogService.updateProduct', () => {
@@ -59,6 +93,16 @@ describe('CatalogService.updateProduct', () => {
 
     expect(updated).toEqual({ id: 'p1', name: 'Laptop', price: 700, category: 'Tecnologia', stock: 3 });
     expect(repo.findById('p1')?.price).toBe(700);
+  });
+
+  it('actualiza la imageUrl y la valida', () => {
+    const { service } = build();
+    expect(service.updateProduct('p1', { imageUrl: '/assets/products/p1.svg' }).imageUrl).toBe(
+      '/assets/products/p1.svg'
+    );
+    expect(() => service.updateProduct('p1', { imageUrl: 'ftp://x/y.png' })).toThrow(
+      InvalidProductDataError
+    );
   });
 
   it('permite mover un producto de categoría', () => {

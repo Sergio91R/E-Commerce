@@ -36,6 +36,9 @@ export class CatalogService {
       category: requireCategory(body.category),
       stock: requireNonNegativeInteger(body.stock, 'stock')
     };
+    if (body.imageUrl !== undefined) {
+      product.imageUrl = requireImageUrl(body.imageUrl);
+    }
     this.productRepository.create(product);
     return product;
   }
@@ -69,6 +72,9 @@ function readChanges(body: Record<string, unknown>): ProductChanges {
   if (body.stock !== undefined) {
     changes.stock = requireNonNegativeInteger(body.stock, 'stock');
   }
+  if (body.imageUrl !== undefined) {
+    changes.imageUrl = requireImageUrl(body.imageUrl);
+  }
   return changes;
 }
 
@@ -100,6 +106,19 @@ function requireNonNegativeInteger(value: unknown, field: string): number {
     );
   }
   return value;
+}
+
+function requireImageUrl(value: unknown): string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new InvalidProductDataError("El campo 'imageUrl' debe ser un texto no vacío.");
+  }
+  const url = value.trim();
+  if (!/^(https?:\/\/|\/|data:image\/)/.test(url)) {
+    throw new InvalidProductDataError(
+      "El campo 'imageUrl' debe ser una URL http(s), una ruta absoluta ('/...') o un data URI de imagen."
+    );
+  }
+  return url;
 }
 
 function requireCategory(value: unknown): ProductCategory {

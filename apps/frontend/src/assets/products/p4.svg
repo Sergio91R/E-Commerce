@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Cafetera eléctrica">
+  <rect width="400" height="300" fill="#fef3c7"/>
+  <rect x="118" y="66" width="124" height="158" rx="12" fill="#78350f"/>
+  <rect x="134" y="150" width="92" height="62" rx="8" fill="#fbbf24"/>
+  <path d="M242 116 h34 a22 22 0 0 1 0 44 h-34" fill="none" stroke="#78350f" stroke-width="14"/>
+  <path d="M168 56 q12 -16 0 -32 M192 56 q12 -16 0 -32" stroke="#d97706" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <rect x="150" y="232" width="160" height="12" rx="6" fill="#92400e"/>
+</svg>

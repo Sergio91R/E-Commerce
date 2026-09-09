@@ -19,6 +19,13 @@ export class ProductListComponent implements OnInit {
   public readonly errorMessage = signal<string | null>(null);
   public readonly stockWarningId = signal<string | null>(null);
 
+  /**
+   * Ids de productos cuya foto no cargó (404, sin conexión). La card cae al
+   * placeholder `📷`. Es un Set mutado desde el `(error)` de la `<img>`;
+   * Angular re-evalúa el `*ngIf` en el siguiente ciclo de detección.
+   */
+  public readonly failedImages = new Set<string>();
+
   public constructor(
     private readonly productService: ProductService,
     public readonly cartService: CartService,

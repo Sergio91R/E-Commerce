@@ -20,6 +20,24 @@
   gap: 6px;
 }
 
+.product-img {
+  width: 100%;
+  height: 150px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #f8fafc;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.product-img--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.6rem;
+  color: #9ca3af;
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;

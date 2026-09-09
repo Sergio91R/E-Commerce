@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Café en grano">
+  <rect width="400" height="300" fill="#ffedd5"/>
+  <path d="M138 92 h124 v146 a12 12 0 0 1 -12 12 h-100 a12 12 0 0 1 -12 -12 Z" fill="#7c2d12"/>
+  <rect x="132" y="78" width="136" height="22" rx="5" fill="#9a3412"/>
+  <ellipse cx="182" cy="168" rx="20" ry="28" fill="#c2410c"/>
+  <ellipse cx="222" cy="190" rx="20" ry="28" fill="#c2410c"/>
+  <path d="M182 140 v56 M222 162 v56" stroke="#7c2d12" stroke-width="5"/>
+</svg>

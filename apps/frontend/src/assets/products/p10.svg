@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Monitor 24 pulgadas Full HD">
+  <rect width="400" height="300" fill="#eff6ff"/>
+  <rect x="72" y="54" width="256" height="160" rx="12" fill="#1e293b"/>
+  <rect x="88" y="70" width="224" height="128" rx="4" fill="#60a5fa"/>
+  <rect x="186" y="214" width="28" height="32" fill="#334155"/>
+  <rect x="146" y="244" width="108" height="16" rx="8" fill="#334155"/>
+</svg>
