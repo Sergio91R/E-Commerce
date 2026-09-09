@@ -42,3 +42,15 @@ export class InvalidCouponError extends DomainError {
     super(`El cupón '${couponCode}' no existe o está expirado.`, 'INVALID_COUPON');
   }
 }
+
+export class ProductAlreadyExistsError extends DomainError {
+  public constructor(productId: string) {
+    super(`El producto '${productId}' ya existe en el catálogo.`, 'PRODUCT_ALREADY_EXISTS');
+  }
+}
+
+export class InvalidProductDataError extends DomainError {
+  public constructor(message: string) {
+    super(message, 'INVALID_PRODUCT_DATA');
+  }
+}

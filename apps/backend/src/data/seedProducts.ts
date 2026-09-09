@@ -1,14 +1,19 @@
+import fs from 'fs';
+import path from 'path';
 import { Product } from '@shared/index';
 
-export const SEED_PRODUCTS: Product[] = [
-  { id: 'p1', name: 'Laptop 14" Ryzen 5', price: 650, category: 'Tecnologia', stock: 8 },
-  { id: 'p2', name: 'Mouse inalámbrico', price: 18, category: 'Tecnologia', stock: 40 },
-  { id: 'p3', name: 'Audífonos Bluetooth', price: 45, category: 'Tecnologia', stock: 25 },
-  { id: 'p4', name: 'Cafetera eléctrica', price: 55, category: 'Hogar', stock: 15 },
-  { id: 'p5', name: 'Juego de sábanas', price: 32, category: 'Hogar', stock: 20 },
-  { id: 'p6', name: 'Camiseta algodón', price: 15, category: 'Ropa', stock: 60 },
-  { id: 'p7', name: 'Zapatillas running', price: 70, category: 'Ropa', stock: 18 },
-  { id: 'p8', name: 'Café en grano 1kg', price: 12, category: 'Alimentos', stock: 50 },
-  { id: 'p9', name: 'Cubo Rubik', price: 8, category: 'Juguetes', stock: 35 },
-  { id: 'p10', name: 'Monitor 24" Full HD', price: 130, category: 'Tecnologia', stock: 10 }
-];
+/**
+ * Datos semilla del catálogo. NO están embebidos en el código: viven en un
+ * archivo de datos versionado (`apps/backend/seed/products.json`) y solo se
+ * usan para poblar la tabla `products` de SQLite la primera vez que arranca
+ * el backend (si la tabla está vacía). En runtime la aplicación siempre lee
+ * el catálogo desde la base, nunca desde esta constante.
+ *
+ * La ruta se resuelve relativa a este módulo y funciona igual ejecutando
+ * desde `src/` (ts-node/Jest) o desde `dist/` (build compilado).
+ */
+const SEED_FILE = path.join(__dirname, '..', '..', 'seed', 'products.json');
+
+export const SEED_PRODUCTS: Product[] = JSON.parse(
+  fs.readFileSync(SEED_FILE, 'utf-8')
+) as Product[];

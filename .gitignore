@@ -11,6 +11,10 @@ coverage/
 
 # Datos persistidos en runtime (no es código, se regenera solo)
 apps/backend/orders.json
+apps/backend/data.sqlite
+apps/backend/data.sqlite-journal
+apps/backend/data.sqlite-wal
+apps/backend/data.sqlite-shm
 
 # Logs
 npm-debug.log*

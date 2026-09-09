@@ -1,10 +1,14 @@
 import { Product } from '@shared/index';
 import { SEED_PRODUCTS } from '../data/seedProducts';
 
+export type ProductChanges = Partial<Omit<Product, 'id'>>;
+
 export interface ProductRepository {
   findAll(): Product[];
   findById(id: string): Product | undefined;
   decrementStock(id: string, quantity: number): void;
+  create(product: Product): void;
+  update(id: string, changes: ProductChanges): void;
 }
 
 /**
@@ -33,5 +37,17 @@ export class InMemoryProductRepository implements ProductRepository {
       return;
     }
     product.stock -= quantity;
+  }
+
+  public create(product: Product): void {
+    this.products.set(product.id, { ...product });
+  }
+
+  public update(id: string, changes: ProductChanges): void {
+    const existing = this.products.get(id);
+    if (!existing) {
+      return;
+    }
+    this.products.set(id, { ...existing, ...changes });
   }
 }

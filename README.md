@@ -10,9 +10,13 @@ cascada (categoría → volumen → cupón → tope absoluto del 35%).
 
 ## Requisitos previos
 
-- Node.js 18 o superior
+- **Node.js 22.5 o superior** (el backend persiste en SQLite usando el módulo
+  estándar `node:sqlite`; en 20.x no existe). Probado en Node 24.
 - npm 9 o superior
 - Google Chrome instalado (para correr los tests del frontend con `ChromeHeadless`)
+
+> El backend **no** tiene dependencias nativas: `node:sqlite` viene con Node, así
+> que `npm install` no compila nada.
 
 ## 1. Backend
 
@@ -28,16 +32,24 @@ Ninguna es obligatoria. Opcionalmente:
 | Variable | Default | Descripción |
 |---|---|---|
 | `PORT` | `3000` | Puerto donde escucha el servidor Express |
+| `SQLITE_DB_PATH` | `apps/backend/data.sqlite` | Ruta del archivo SQLite. Usá `:memory:` para una base efímera. Bajo `npm test` se fuerza `:memory:` automáticamente. |
 
 ### Comandos
 
 ```bash
 npm run dev      # Levanta el servidor en modo desarrollo (ts-node-dev) en :3000
-npm run build    # Compila TypeScript a dist/
+npm run build    # Compila packages/shared-types + el backend a dist/
 npm start        # Corre la versión compilada (requiere build previo)
 npm test         # Corre toda la suite de Jest con reporte de cobertura
+npm run lint     # ESLint (eslint:recommended + @typescript-eslint/recommended)
 npm run test:watch
 ```
+
+> `npm run dev` y `npm run build` compilan primero `packages/shared-types`
+> (script `build:shared`), porque el backend lo consume como `@shared/*`.
+> `npm start` usa `-r tsconfig-paths/register` para resolver ese alias en el
+> código ya compilado. `npm test` no necesita build: Jest mapea `@shared/*`
+> directo al fuente.
 
 Al levantar el servidor vas a ver:
 
@@ -48,25 +60,25 @@ Backend escuchando en http://localhost:3000
 ### Probar rápido con curl
 
 ```bash
+# Catálogo
 curl http://localhost:3000/api/products
 
+# Checkout
 curl -X POST http://localhost:3000/api/checkout \
   -H "Content-Type: application/json" \
   -d '{"items":[{"productId":"p1","quantity":1}],"couponCode":"WELCOME2026"}'
+
+# Alta de producto (POST) -> 201 | id repetido -> 409 | datos inválidos -> 400
+curl -X POST http://localhost:3000/api/products \
+  -H "Content-Type: application/json" \
+  -d '{"id":"p11","name":"Teclado mecánico","price":40,"category":"Tecnologia","stock":30}'
+
+# Edición parcial (PUT) -> 200 | id inexistente -> 404
+curl -X PUT http://localhost:3000/api/products/p1 \
+  -H "Content-Type: application/json" \
+  -d '{"price":700,"stock":3}'
 ```
 
-En PowerShell:
-
-```powershell
-Invoke-RestMethod http://localhost:3000/api/products
-
-Invoke-RestMethod -Uri http://localhost:3000/api/checkout -Method Post `
-  -ContentType "application/json" `
-  -Body '{"items":[{"productId":"p1","quantity":1}],"couponCode":"WELCOME2026"}'
-```
-
-El cupón válido pre-cargado es **`WELCOME2026`** (15%). También existe
-`EXPIRED2020` para probar el edge case de cupón expirado.
 
 ## 2. Frontend
 
@@ -87,12 +99,37 @@ npm test         # ng test --code-coverage --watch=false --browsers=ChromeHeadle
 
 El reporte de cobertura HTML queda en `apps/frontend/coverage/frontend/index.html`.
 
-## 3. Catalogo de productos (semilla)
+## 3. Persistencia y datos semilla (SQLite)
 
-El backend arranca con 10 productos en memoria (`apps/backend/src/data/seedProducts.ts`),
-incluyendo varios de categoría "Tecnologia" (`p1` Laptop $650, `p2` Mouse $18,
-`p3` Audífonos $45, `p10` Monitor $130) para poder disparar la Regla de
-Categoría fácilmente durante la demo.
+El backend persiste en un archivo SQLite (`apps/backend/data.sqlite`) con tres
+tablas: `products`, `orders`, `coupons`. Usa `node:sqlite` (módulo estándar de
+Node), así que no hay dependencias nativas ni servidor de base de datos.
+
+**Creación y siembra automática:** al levantar el servidor por primera vez se
+crea el archivo, se aplican las tablas (`CREATE TABLE IF NOT EXISTS`) y —solo si
+están vacías— se siembran:
+
+- Los 10 productos del archivo de datos versionado
+  `apps/backend/seed/products.json` (ya no están embebidos en código TS),
+  incluyendo varios de categoría "Tecnologia" (`p1` Laptop $650, `p2` Mouse $18,
+  `p3` Audífonos $45, `p10` Monitor $130) para disparar la Regla de Categoría en
+  la demo.
+- El cupón `WELCOME2026` (15%).
+
+Una vez creada la base, la API **siempre** lee el catálogo desde SQLite; el
+JSON solo se usa como semilla inicial. Para cambiar el catálogo de arranque,
+editá `seed/products.json` y borrá `data.sqlite` para que se vuelva a sembrar.
+
+**Resetear los datos de prueba:** borrá el archivo y volvé a arrancar; se
+regenera sembrado.
+
+```bash
+rm apps/backend/data.sqlite       # (o del /f en Windows cmd)
+npm run dev
+```
+
+El archivo está en `.gitignore` (es estado de runtime, no código). Los tests
+nunca lo tocan: `npm test` corre siempre contra una base `:memory:` aislada.
 
 ## 4. Estructura del repositorio
 
@@ -109,11 +146,3 @@ examen-ecommerce/
 └── README.md
 ```
 
-## 5. Checklist de la prueba técnica
-
-- [x] Backend valida stock y aplica las reglas de descuento en cascada + tope del 35%
-- [x] Frontend interactivo: carrito reactivo, cupón, desglose y alerta visual
-- [x] `docs/arquitectura.md` con justificación de stack, trade-offs y patrones
-- [x] `docs/ia.md` con prompts, agente auditor y bitácora de correcciones
-- [x] Cobertura ≥ 80% en backend y frontend (ver comandos de test arriba)
-- [ ] Repositorio subido a GitHub con historial de commits incremental (a cargo del candidato)
