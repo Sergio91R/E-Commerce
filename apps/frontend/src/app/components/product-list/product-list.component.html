@@ -18,13 +18,13 @@
       </div>
       <div class="price">${{ product.price.toFixed(2) }}</div>
       <div class="stock">
-        Stock: {{ product.stock }}
+        Stock: {{ availableStock(product) }}
         <span *ngIf="quantityInCart(product.id) > 0"> · en carrito: {{ quantityInCart(product.id) }}</span>
       </div>
 
       <button
         class="btn btn-primary"
-        [disabled]="quantityInCart(product.id) >= product.stock || orderConfirmationService.isLocked()"
+        [disabled]="availableStock(product) <= 0 || orderConfirmationService.isLocked()"
         (click)="addToCart(product)"
       >
         Agregar al carrito

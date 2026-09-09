@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, effect, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductService } from '../../services/product.service';
 import { CartService } from '../../services/cart.service';
@@ -24,23 +24,33 @@ export class ProductListComponent implements OnInit {
     public readonly cartService: CartService,
     public readonly cartDrawerService: CartDrawerService,
     public readonly orderConfirmationService: OrderConfirmationService
-  ) {}
-
-  public ngOnInit(): void {
-    this.productService.getProducts().subscribe({
-      next: (products) => {
-        this.products.set(products);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.errorMessage.set('No se pudo cargar el catálogo. ¿Está el backend corriendo en el puerto 3000?');
-        this.loading.set(false);
+  ) {
+    // Cada vez que se confirma una orden, el stock real bajó en el backend
+    // (CheckoutService.checkout() lo decrementa). Sin esto, el catálogo
+    // seguiría mostrando los números viejos hasta recargar la página a mano.
+    effect(() => {
+      if (this.orderConfirmationService.confirmedOrder()) {
+        this.fetchProducts();
       }
     });
   }
 
+  public ngOnInit(): void {
+    this.fetchProducts();
+  }
+
   public quantityInCart(productId: string): number {
     return this.cartService.lines().find((line) => line.product.id === productId)?.quantity ?? 0;
+  }
+
+  /**
+   * Stock "disponible para seguir agregando", restando lo que el usuario ya
+   * puso en el carrito (todavía sin confirmar). El `product.stock` crudo
+   * solo baja de verdad en el backend cuando se confirma la compra; esto
+   * es un ajuste puramente visual del lado del cliente.
+   */
+  public availableStock(product: Product): number {
+    return product.stock - this.quantityInCart(product.id);
   }
 
   public addToCart(product: Product): void {
@@ -53,5 +63,19 @@ export class ProductListComponent implements OnInit {
       this.stockWarningId.set(product.id);
       setTimeout(() => this.stockWarningId.set(null), 2000);
     }
+  }
+
+  private fetchProducts(): void {
+    this.productService.getProducts().subscribe({
+      next: (products) => {
+        this.products.set(products);
+        this.loading.set(false);
+        this.errorMessage.set(null);
+      },
+      error: () => {
+        this.errorMessage.set('No se pudo cargar el catálogo. ¿Está el backend corriendo en el puerto 3000?');
+        this.loading.set(false);
+      }
+    });
   }
 }

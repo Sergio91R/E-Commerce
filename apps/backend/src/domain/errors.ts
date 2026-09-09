@@ -29,9 +29,9 @@ export class ProductNotFoundError extends DomainError {
 }
 
 export class InsufficientStockError extends DomainError {
-  public constructor(productId: string, requested: number, available: number) {
+  public constructor(productLabel: string, requested: number, available: number) {
     super(
-      `Stock insuficiente para '${productId}': se pidieron ${requested}, hay ${available} disponibles.`,
+      `Stock insuficiente para '${productLabel}': se pidieron ${requested}, hay ${available} disponibles.`,
       'INSUFFICIENT_STOCK'
     );
   }
