@@ -117,3 +117,4 @@ describe('CheckoutService - calculatePreview (sin efectos secundarios)', () => {
     service.calculatePreview([{ productId: 'p1', quantity: 2 }], undefined);
     expect(productRepository.findById('p1')?.stock).toBe(2);
   });
+});
