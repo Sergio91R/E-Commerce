@@ -65,7 +65,9 @@ describe('CheckoutService', () => {
   it('preview() pega a /cart/calculate, no a /checkout', () => {
     service.preview([{ productId: 'p1', quantity: 1 }], undefined).subscribe();
 
-    httpMock.expectOne(previewUrl).flush({} as CheckoutPreviewResponseDTO);
+    const req = httpMock.expectOne(previewUrl);
+    expect(req.request.url).toBe(previewUrl);
+    req.flush({} as CheckoutPreviewResponseDTO);
     httpMock.expectNone(checkoutUrl);
   });
 

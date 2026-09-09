@@ -90,6 +90,7 @@ describe('CartComponent', () => {
   it('no permite confirmar la compra con el carrito vacío', () => {
     fixture.detectChanges();
     fixture.componentInstance.confirmPurchase();
+    expect(fixture.componentInstance.confirming()).toBeFalse();
     httpMock.expectNone(checkoutUrl);
   });
 
@@ -191,6 +192,7 @@ describe('CartComponent', () => {
 
     fixture.componentInstance.onCouponInput('WELCOME2026');
     tick(300);
+    expect(fixture.componentInstance.appliedCouponCode()).toBe(''); // no se aplicó todavía
     httpMock.expectNone(previewUrl); // escribir solo no debe llamar al backend
   }));
 
@@ -270,6 +272,12 @@ describe('CartComponent', () => {
     // El usuario borra o edita lo que escribió: el mensaje debe desaparecer
     fixture.componentInstance.onCouponInput('');
     expect(fixture.componentInstance.couponFieldError()).toBeNull();
+
+    // Vaciar el cupón cambia appliedCouponCode, lo que dispara un nuevo
+    // recálculo automático: lo flusheamos para no dejar timers pendientes
+    // al terminar el test (fakeAsync exige que la cola quede vacía).
+    tick(300);
+    httpMock.expectOne(previewUrl).flush(emptyPreview);
   }));
 
   it('editar el input del cupón también limpia el error de confirmación (ej. tras un intento fallido de compra)', () => {
@@ -281,7 +289,7 @@ describe('CartComponent', () => {
     expect(fixture.componentInstance.confirmError()).toBeNull();
   });
 
-  it('BUG REPRODUCIDO: si se aplica un cupón inválido y luego se borra el input, confirmar compra NO debe reenviar ese cupón', fakeAsync(() => {
+  it('regresión: al vaciar el input después de un cupón inválido, confirmar compra no reenvía ese cupón', fakeAsync(() => {
     fixture.detectChanges();
     cartService.addItem(laptop);
     fixture.detectChanges();

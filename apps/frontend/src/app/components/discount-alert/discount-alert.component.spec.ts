@@ -23,13 +23,15 @@ describe('DiscountAlertComponent', () => {
   });
 
   it('no muestra la alerta cuando capReached se setea explícitamente en false', () => {
-    fixture.componentInstance.capReached = false;
+    // Con OnPush, un @Input() se actualiza correctamente en los tests usando
+    // fixture.componentRef.setInput(), no asignando la propiedad directo.
+    fixture.componentRef.setInput('capReached', false);
     fixture.detectChanges();
     expect(getAlertElement()).toBeNull();
   });
 
   it('muestra la alerta con el texto exacto requerido cuando capReached es true', () => {
-    fixture.componentInstance.capReached = true;
+    fixture.componentRef.setInput('capReached', true);
     fixture.detectChanges();
 
     const alertEl = getAlertElement();
@@ -40,11 +42,11 @@ describe('DiscountAlertComponent', () => {
   });
 
   it('la alerta desaparece de forma reactiva si capReached vuelve a false', () => {
-    fixture.componentInstance.capReached = true;
+    fixture.componentRef.setInput('capReached', true);
     fixture.detectChanges();
     expect(getAlertElement()).not.toBeNull();
 
-    fixture.componentInstance.capReached = false;
+    fixture.componentRef.setInput('capReached', false);
     fixture.detectChanges();
     expect(getAlertElement()).toBeNull();
   });
